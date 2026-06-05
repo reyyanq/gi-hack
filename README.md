@@ -267,73 +267,65 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 ---
 
-## Task Distribution — 4 Collaborators
+## Implementation Plan (23 Tasks, 5 Phases)
 
-### You: Ingestion Pipeline (data → Neo4j)
+> Full code for each task in [`docs/superpowers/plans/2026-06-05-leadgraph-comprehensive-plan.md`](docs/superpowers/plans/2026-06-05-leadgraph-comprehensive-plan.md)
 
-Your job is the foundation: getting data from external sources into the Neo4j graph. Nothing else can be built until this works. You build the SourceAdapter plugin system, all adapters (1 real FDA, 1 real GitHub, 5 stubs), the SourceManager that runs them concurrently, and the CLI to trigger everything.
+### Phase 1: Backend Ingestion + Scoring
 
-| # | Task | What You Need To Do | Files |
-|---|------|---------------------|-------|
-| 1 | **Types** | Define the `SourceAdapter` interface (`fetch()`, `normalize()`, `healthCheck()`), `RawLead`/`LeadCandidate`/`Signal` data shapes, `SourceConfig` (weight, concurrency, enabled), and scoring types (`TierLevel`, `ScoreBreakdown`, `ScoredCompany`, `Disqualifier`) | `ingest/types.ts` |
-| 2 | **Ontology seed** | Write Cypher to create Neo4j constraints (`Company.name UNIQUE`, `Application.name UNIQUE`, indexes), 7 application areas (Hemostasis, Plasma Proteins, etc.), 10 Siemens products linked to applications, 15 baseline competitor companies with their application areas and seed signals | `ingest/ontology.ts` |
-| 3 | **5 stub adapters** | Implement `SourceAdapter` for each: ClinicalTrials (4 simulated trial records), PatentFilings (5 patent records), Hiring (5 job postings), Conference (5 trade shows), Funding (4 investment rounds). Each returns hardcoded realistic German diagnostics company data and normalizes it to `LeadCandidate` with proper signals | `ingest/adapters/*-stub.ts` |
-| 4 | **FDA adapter** | Real adapter hitting `https://api.fda.gov/device/510k.json` filtered by 8 product codes (JPA, JSO, JXV, JJF, JTW, JLH, JXI, JZJ). Map product codes to application areas. Extract company names, strip legal suffixes. 10s timeout per request, graceful failure per code | `ingest/adapters/fda-510k.ts` |
-| 5 | **GitHub adapter** | Real adapter searching `api.github.com/search/repositories` for 10 diagnostic keywords (elisa, ivd, immunoassay, etc.). Group results by org owner, fetch org profile for descriptions. Map GitHub topics to application areas. Generates NEWS signal per org. Needs GITHUB_TOKEN env var for higher rate limits | `ingest/adapters/github.ts` |
-| 6 | **SourceManager** | Build the concurrent orchestrator. Maintains a `Map<string, {adapter, config}>`. `runAll()` runs adapters in parallel with pool limit (default 3), sorted by weight descending. Each adapter: fetch → normalize → deduplicate → upsert (MERGE Company, link DEVELOPS, CREATE signals). Robust error handling per-adapter | `ingest/orchestrator.ts` |
-| 7 | **Index + routes** | Create `ingest/index.ts` that exports a singleton `SourceManager` with all 7 adapters registered at their weights. Wire it to `POST /api/graph/ingest` (with `?source=X` param) and `GET /api/graph/ingest/sources` | `ingest/index.ts`, `routes/graph.ts` |
-| 8 | **CLI scripts** | Write `scripts/ingest.ts` that initializes the Neo4j driver, calls the SourceManager, and logs results. Add `package.json` scripts: `ingest`, `ingest:seed`, `ingest:fda`, `ingest:score` | `scripts/ingest.ts`, `package.json` |
-| 9 | **Scoring pipeline** | Write `scoring/scorer.ts` — read all prospect companies from Neo4j, compute signal score (weighted × confidence × recency cap 40), product fit (app overlap ratio × 30), segment bonus (IVD=20/CDMO=15/Supplier=10), recency bonus (≤3mo=10). Check hard disqualifiers. Generate outreach hook from strongest signal type. Return sorted `ScoredResult[]` | `scoring/scorer.ts`, `scoring/types.ts` |
+| # | Check | Task | Files |
+|---|-------|------|-------|
+| 1 | `[ ]` | **queryRows helper** — add native-record Cypher helper to `neo4j.ts` for scorer | `services/graph/neo4j.ts` |
+| 2 | `[ ]` | **Types** — SourceAdapter interface, SourceConfig, scoring types (TierLevel, ScoreBreakdown, ScoredCompany) | `services/graph/ingest/types.ts` |
+| 3 | `[ ]` | **Ontology seed** — constraints, 7 applications, 10 Siemens products, 15 competitor companies, seed signals | `services/graph/ingest/ontology.ts` |
+| 4 | `[ ]` | **5 stub adapters** — ClinicalTrials, Patent, Hiring, Conference, Funding (hardcoded records → LeadCandidate) | `services/graph/ingest/adapters/*-stub.ts` |
+| 5 | `[ ]` | **FDA adapter** — real `api.fda.gov/device/510k` with 8 product code filters, company extraction | `services/graph/ingest/adapters/fda-510k.ts` |
+| 6 | `[ ]` | **GitHub adapter** — real `api.github.com` keyword search, org detection, topic→application mapping | `services/graph/ingest/adapters/github.ts` |
+| 7 | `[ ]` | **SourceManager** — concurrent runner, pool=3, weight-sorted, dedup, Neo4j upsert | `services/graph/ingest/orchestrator.ts` |
+| 8 | `[ ]` | **Index + routes** — singleton SourceManager with all 7 adapters, POST /ingest, GET /sources | `ingest/index.ts`, `routes/graph.ts` |
+| 9 | `[ ]` | **CLI + Scoring** — `npm run ingest`, `npm run score`. Scorer computes signal (0-40) + product fit (0-30) + segment bonus (0-20) + recency (0-10) → HOT/WARM/COLD | `scripts/ingest.ts`, `scoring/scorer.ts` |
 
-**What success looks like:** `npm run ingest:seed` populates the ontology, `npm run ingest` fetches from all 7 sources and creates Company/Signal nodes in Neo4j, `npm run score` prints HOT/WARM/COLD distribution.
+> **Depends on:** Nothing. **Delivers:** Neo4j populated with companies, signals, scores.
 
----
+### Phase 2: Dashboard UI (React)
 
-### Collaborator A: Lead Dashboard UI
+| # | Check | Task | Files |
+|---|-------|------|-------|
+| 10 | `[ ]` | **API hooks** — useIngest, useSeed, useScores, useSources in TanStack Query | `client/src/lib/graph.ts` |
+| 11 | `[ ]` | **Navigation** — add Leads, Pipeline, Admin links to RootLayout | `client/src/routes/__root.tsx` |
+| 12 | `[ ]` | **Dashboard home** — 4 summary cards, Top 5 leads, Quick Actions (Seed/Ingest buttons) | `client/src/routes/index.tsx` |
+| 13 | `[ ]` | **Lead Explorer** — score-sorted table with tier badges + score bars, search/filter, detail drawer with signals timeline + breakdown + outreach hook | `client/src/routes/leads*.tsx` |
+| 14 | `[ ]` | **Admin panel** — per-source Run buttons, health status, scoring summary, Neo4j stats | `client/src/routes/admin.tsx` |
 
-You build the React frontend that visualizes scored leads. You read from Neo4j via the API — you never write data. Your work is entirely in `packages/client/`.
+> **Depends on:** Phase 1 (for data), but buildable with mock data. **Delivers:** Full UI to browse/explore/scored leads.
 
-| # | Task | What You Need To Do | Files |
-|---|------|---------------------|-------|
-| A1 | **Score API** | Add `GET /api/graph/score` route that imports and calls the scoring pipeline. Returns `{ ok: true, data: { companies: ScoredResult[] } }`. Sort descending by totalScore | `routes/graph.ts` (extend) |
-| A2 | **Lead table page** | Create a new TanStack route `/leads` with a data table showing: company name, tier badge (HOT=red, WARM=yellow, COLD=gray), total score (0-100 bar), signal count, top application area, outreach hook preview. Use TanStack Query to fetch and cache | `client/src/routes/leads.tsx` |
-| A3 | **Filter bar** | Add filters above the table: tier dropdown (HOT/WARM/COLD/All), segment multi-select, application area multi-select. Filter client-side from cached data. Show result count | `client/src/routes/leads.tsx` + `client/src/lib/leads.ts` |
-| A4 | **Company detail drawer** | Click a row → slide-in drawer showing: full score breakdown bar chart (signal/product/segment/recency), signals timeline (ordered by date, color-coded by type), matched application areas, generated outreach hook with copy button | `client/src/routes/leads/$id.tsx` |
-| A5 | **Dashboard home** | Rewrite `index.tsx` to show: 3 pipeline summary cards (HOT count, WARM count, COLD count), top 5 leads mini-table, source health indicators (green/red per adapter), [Run Ingest] button with loading state | `client/src/routes/index.tsx` |
+### Phase 3: Pipeline CRM
 
-**What success looks like:** Opening the app shows the dashboard with summary stats. Clicking into leads shows a sortable/filterable table. Clicking a company shows detail with signals timeline and score breakdown.
+| # | Check | Task | Files |
+|---|-------|------|-------|
+| 15 | `[ ]` | **Pipeline data model + API** — Contact/PipelineStage/Activity Cypher, POST start, PUT advance, GET leads, POST notes | `services/graph/pipeline/`, `routes/pipeline.ts` |
+| 16 | `[ ]` | **Pipeline React Query hooks** — usePipelineLeads, useAdvanceStage, useAddNote, useActivity | `client/src/lib/pipeline.ts` |
+| 17 | `[ ]` | **Pipeline kanban** — 5-column (New→Contacted→Meeting→Proposal→Closed), drag between stages, add note modal | `client/src/routes/pipeline.tsx` |
 
----
+> **Depends on:** Phase 1 (for companies). **Delivers:** Sales pipeline with stage tracking + activity log.
 
-### Collaborator B: Pipeline & CRM Tracking
+### Phase 4: AI Layer
 
-You build the sales pipeline management system. You define new Neo4j node types and relationships, build the API, and build the kanban UI. You both read and write to the graph.
+| # | Check | Task | Files |
+|---|-------|------|-------|
+| 18 | `[ ]` | **AI enrichment** — LLM fills segment/domain/applications for companies | `services/ai/enrich.ts` |
+| 19 | `[ ]` | **AI outreach** — LLM generates personalized cold email from signals + products | `services/ai/outreach.ts` |
+| 20 | `[ ]` | **AI explainer + API** — LLM explains score breakdown, POST /enrich/:id, POST /outreach/:id, GET /explain/:id | `services/ai/explain.ts`, `routes/ai.ts` |
+| 21 | `[ ]` | **AI UI** — "Enrich" / "Generate Email" / "Why this score?" buttons on lead detail drawer | `client/src/routes/leads/$id.tsx` |
 
-| # | Task | What You Need To Do | Files |
-|---|------|---------------------|-------|
-| B1 | **Pipeline data model** | Define interfaces for `Contact` (name, email, role, phone), `PipelineStage` (stage enum, enteredAt), `Activity` (type: note/email/meeting/call, note text, date). Cypher: `MERGE (c:Contact {email})`, `MERGE (c)-[:CONTACT_AT]->(company)`, `MERGE (c)-[:IN_STAGE]->(:PipelineStage)`, `MERGE (c)-[:HAS_ACTIVITY]->(:Activity)` | `server/src/services/graph/pipeline/types.ts` |
-| B2 | **Pipeline API** | `POST /api/pipeline/start {companyName, contact?}` — creates Contact + initial PipelineStage(New). `GET /api/pipeline/leads` — returns all pipeline leads with current stage. `PUT /api/pipeline/:id/advance {stage}` — creates new PipelineStage, archives previous | `server/src/routes/pipeline.ts` |
-| B3 | **Notes API** | `POST /api/pipeline/:id/notes {type, note}` — adds Activity. `GET /api/pipeline/:id/activity` — returns all activities sorted by date desc | `server/src/routes/pipeline.ts` (extend) |
-| B4 | **Kanban view** | Create a TanStack route `/pipeline` with 5 columns: New, Contacted, Meeting, Proposal Proposal, Closed Won/Lost. Each column shows company cards with name, score, tier badge. Drag & drop between columns (calls advance API). Use `@dnd-kit/core` or native HTML5 drag | `client/src/routes/pipeline.tsx` |
-| B5 | **Activity timeline** | On the company detail drawer (A4), add a "Pipeline" tab showing: current stage, contact info, activity log with timestamps. Inline "Add Note" form. Stage advance button with confirmation | Extend `client/src/routes/leads/$id.tsx` |
+> **Depends on:** Phase 1 + Phase 2 (for data + detail drawer). **Delivers:** AI-powered enrichment, outreach emails, score explanations.
 
-**What success looks like:** Finding a HOT lead → clicking "Start Pipeline" → it appears in the "New" column → drag to "Contacted" → add a note → it shows in the activity timeline.
+### Phase 5: Verification
 
----
-
-### Collaborator C: AI Outreach & Scoring
-
-You build the AI-powered layer that makes LeadGraph intelligent. You use the Vercel AI SDK (already set up with OpenAI) to enrich company data, generate outreach emails, and explain scoring decisions.
-
-| # | Task | What You Need To Do | Files |
-|---|------|---------------------|-------|
-| C1 | **AI company enrichment** | Write a function `enrichCompany(name: string, signals: Signal[])` that calls `generateText()` from the Vercel AI SDK. System prompt: "You are a diagnostics industry analyst. Given a company name and signals, infer their market segment (IVD_MANUFACTURER/CDMO/SUPPLIER/RESEARCH), domain name if missing, relevant application areas, and a concise 2-sentence description." Returns structured JSON. Only update fields that are null in the graph | `server/src/services/ai/enrich.ts` |
-| C2 | **AI outreach email** | Write `generateOutreach(company: ScoredResult, products: Product[])` that calls the AI. System prompt: "You are a B2B sales engineer at Siemens Healthineers. Write a personalized cold email to [company] referencing their recent [strongest signal]. Suggest relevant products from our catalog. Keep it 3-4 paragraphs, professional but warm, with a clear CTA." Returns email body as string | `server/src/services/ai/outreach.ts` |
-| C3 | **Enrichment API** | `POST /api/ai/enrich/:companyId` — calls enrichCompany, writes result to Neo4j (UPDATE Company SET segment/domain/description). `POST /api/ai/outreach/:companyId` — calls generateOutreach, optionally stores as Activity in pipeline. Both require existing `ai.ts` route pattern | Extend `server/src/routes/ai.ts` |
-| C4 | **Outreach UI** | Add "Generate Email" button to the company detail drawer (A4). On click, calls `/api/ai/outreach/:companyId` and shows the generated email in a modal with Copy and Send (download .txt) buttons. Loading state while AI generates | Extend `client/src/routes/leads/$id.tsx` |
-| C5 | **Scoring explainer** | Write `explainScore(company: ScoredResult)` that sends the score breakdown to the AI: "Explain in 2-3 sentences why [company] scored [total]/100. Mention which signals contributed most, their product fit, and segment advantage." Add "Why this score?" button next to score in the lead table and drawer | `server/src/services/ai/explain.ts` + API + UI hookup |
-
-**What success looks like:** Viewing a lead → click "Enrich" → company segment/domain populated by AI → click "Generate Email" → professional cold email referencing their FDA clearance appears → click "Why this score?" → plain English explanation of their 85/100 HOT rating.
+| # | Check | Task | Details |
+|---|-------|------|---------|
+| 22 | `[ ]` | **TypeScript + LSP** — `npm run typecheck` clean, no `lsp_diagnostics` errors on all new files | All changed files |
+| 23 | `[ ]` | **Neo4j smoke test** — `docker compose up -d neo4j` → `npm run ingest:seed` → `npm run ingest` → `npm run score` → check API endpoints | Full pipeline |
 
 ---
 
