@@ -274,29 +274,29 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 > **Team Legend:**
 > | Icon | Member | Role |
 > |------|--------|------|
-> | 🛠️ | **You** | Backend Ingestion Pipeline |
-> | 🎨 | **Collab A** | Lead Dashboard UI |
-> | 📋 | **Collab B** | Pipeline CRM |
-> | 🤖 | **Collab C** | AI Outreach & Scoring |
+> | 🛠️ | **Tobias** | Backend Ingestion Pipeline |
+> | 🎨 | **Reyyan** | Lead Dashboard UI |
+> | 📋 | **Beyza** | Pipeline CRM |
+> | 🤖 | **Zeynep** | AI Outreach & Scoring |
 > | ✅ | Anyone | Verification |
 
-### Phase 1: Backend Ingestion + Scoring (🛠️ You)
+### Phase 1: Backend Ingestion + Scoring (🛠️ Tobias)
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
-| 1 | `[ ]` | **queryRows helper** — add native-record Cypher helper to `neo4j.ts` for scorer | 🛠️ You | `services/graph/neo4j.ts` |
-| 2 | `[ ]` | **Types** — SourceAdapter interface, SourceConfig, scoring types (TierLevel, ScoreBreakdown, ScoredCompany) | 🛠️ You | `services/graph/ingest/types.ts` |
-| 3 | `[ ]` | **Ontology seed** — constraints, 7 applications, 10 Siemens products, 15 competitor companies, seed signals | 🛠️ You | `services/graph/ingest/ontology.ts` |
-| 4 | `[ ]` | **5 stub adapters** — ClinicalTrials, Patent, Hiring, Conference, Funding (hardcoded records → LeadCandidate) | 🛠️ You | `services/graph/ingest/adapters/*-stub.ts` |
-| 5 | `[ ]` | **FDA adapter** — real `api.fda.gov/device/510k` with 8 product code filters, company extraction | 🛠️ You | `services/graph/ingest/adapters/fda-510k.ts` |
-| 6 | `[ ]` | **GitHub adapter** — real `api.github.com` keyword search, org detection, topic→application mapping | 🛠️ You | `services/graph/ingest/adapters/github.ts` |
-| 7 | `[ ]` | **SourceManager** — concurrent runner, pool=3, weight-sorted, dedup, Neo4j upsert | 🛠️ You | `services/graph/ingest/orchestrator.ts` |
-| 8 | `[ ]` | **Index + routes** — singleton SourceManager with all 7 adapters, POST /ingest, GET /sources | 🛠️ You | `ingest/index.ts`, `routes/graph.ts` |
-| 9 | `[ ]` | **CLI + Scoring** — `npm run ingest`, `npm run score`. Scorer computes signal (0-40) + product fit (0-30) + segment bonus (0-20) + recency (0-10) → HOT/WARM/COLD | 🛠️ You | `scripts/ingest.ts`, `scoring/scorer.ts` |
+| 1 | `[ ]` | **queryRows helper** — add native-record Cypher helper to `neo4j.ts` for scorer | 🛠️ **Tobias** | `services/graph/neo4j.ts` |
+| 2 | `[ ]` | **Types** — SourceAdapter interface, SourceConfig, scoring types (TierLevel, ScoreBreakdown, ScoredCompany) | 🛠️ **Tobias** | `services/graph/ingest/types.ts` |
+| 3 | `[ ]` | **Ontology seed** — constraints, 7 applications, 10 Siemens products, 15 competitor companies, seed signals | 🛠️ **Tobias** | `services/graph/ingest/ontology.ts` |
+| 4 | `[ ]` | **5 stub adapters** — ClinicalTrials, Patent, Hiring, Conference, Funding (hardcoded records → LeadCandidate) | 🛠️ **Tobias** | `services/graph/ingest/adapters/*-stub.ts` |
+| 5 | `[ ]` | **FDA adapter** — real `api.fda.gov/device/510k` with 8 product code filters, company extraction | 🛠️ **Tobias** | `services/graph/ingest/adapters/fda-510k.ts` |
+| 6 | `[ ]` | **GitHub adapter** — real `api.github.com` keyword search, org detection, topic→application mapping | 🛠️ **Tobias** | `services/graph/ingest/adapters/github.ts` |
+| 7 | `[ ]` | **SourceManager** — concurrent runner, pool=3, weight-sorted, dedup, Neo4j upsert | 🛠️ **Tobias** | `services/graph/ingest/orchestrator.ts` |
+| 8 | `[ ]` | **Index + routes** — singleton SourceManager with all 7 adapters, POST /ingest, GET /sources | 🛠️ **Tobias** | `ingest/index.ts`, `routes/graph.ts` |
+| 9 | `[ ]` | **CLI + Scoring** — `npm run ingest`, `npm run score`. Scorer computes signal (0-40) + product fit (0-30) + segment bonus (0-20) + recency (0-10) → HOT/WARM/COLD | 🛠️ **Tobias** | `scripts/ingest.ts`, `scoring/scorer.ts` |
 
 > **Depends on:** Nothing. **Delivers:** Neo4j populated with companies, signals, scores.
 
-### Phase 2: Dashboard UI (🎨 Collab A)
+### Phase 2: Dashboard UI (🎨 Reyyan)
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
@@ -308,7 +308,7 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 > **Depends on:** Phase 1 (for data), but buildable with mock data. **Delivers:** Full UI to browse/explore scored leads.
 
-### Phase 3: Pipeline CRM (📋 Collab B)
+### Phase 3: Pipeline CRM (📋 Beyza)
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
@@ -318,7 +318,7 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 > **Depends on:** Phase 1 (for companies). **Delivers:** Sales pipeline with stage tracking + activity log.
 
-### Phase 4: AI Layer (🤖 Collab C)
+### Phase 4: AI Layer (🤖 Zeynep)
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
@@ -342,16 +342,16 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 | Member | Focus | Tasks | What They Build |
 |--------|-------|-------|-----------------|
-| 🛠️ **You** | Ingestion Pipeline | 1–9 | Types, ontology, 7 data source adapters (FDA + GitHub + 5 stubs), concurrent SourceManager, Neo4j upsert, scoring pipeline, CLI scripts |
-| 🎨 **Collab A** | Lead Dashboard UI | 10–14 | React pages: Dashboard home with summary cards, Lead Explorer table with filters + detail drawer, Admin panel with ingest controls. Uses TanStack Router/Query |
-| 📋 **Collab B** | Pipeline CRM | 15–17 | Neo4j pipeline data model (Contact/Stage/Activity), CRUD API, React kanban board with drag-and-drop, activity timeline, note-taking |
-| 🤖 **Collab C** | AI Layer | 18–21 | Company enrichment (LLM fills missing data), personalized outreach email generator, score explainer, UI integration with buttons on lead detail drawer |
+| 🛠️ **Tobias** | Ingestion Pipeline | 1–9 | Types, ontology, 7 data source adapters (FDA + GitHub + 5 stubs), concurrent SourceManager, Neo4j upsert, scoring pipeline, CLI scripts |
+| 🎨 **Reyyan** | Lead Dashboard UI | 10–14 | React pages: Dashboard home with summary cards, Lead Explorer table with filters + detail drawer, Admin panel with ingest controls. Uses TanStack Router/Query |
+| 📋 **Beyza** | Pipeline CRM | 15–17 | Neo4j pipeline data model (Contact/Stage/Activity), CRUD API, React kanban board with drag-and-drop, activity timeline, note-taking |
+| 🤖 **Zeynep** | AI Layer | 18–21 | Company enrichment (LLM fills missing data), personalized outreach email generator, score explainer, UI integration with buttons on lead detail drawer |
 
 ## Dependency Flow
 
 ```
                           ┌─────────────────────────────────────┐
-                          │ 🛠️ You: Ingestion Pipeline          │
+                          │ 🛠️ **Tobias**: Ingestion Pipeline          │
                           │ Task 1-9: types → adapters →         │
                           │ SourceManager → seed → ingest →      │
                           │ score                                │
@@ -363,7 +363,7 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
                             ┌───────────────┼───────────────┐
                             ▼               ▼               ▼
                    ┌────────────────┐ ┌────────────┐ ┌──────────────┐
-                   │ 🎨 Collab A    │ │ 📋 Collab B│ │ 🤖 Collab C  │
+                   │ 🎨 **Reyyan**    │ │ 📋 **Beyza**│ │ 🤖 **Zeynep**  │
                    │ Lead Dashboard │ │ Pipeline   │ │ AI Layer     │
                    │                │ │ CRM        │ │              │
                    │ Tasks 10-14    │ │ Tasks 15-17│ │ Tasks 18-21  │
@@ -373,7 +373,7 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
                    └────────────────┘ └────────────┘ └──────────────┘
 ```
 
-**Parallel execution:** All 3 collaborators can start as soon as the graph schema is known (🛠️ You Task 2). 🎨 Collab A needs scoring data (Task 9) for full functionality but can build UI with mock data first. 📋 Collab B and 🤖 Collab C are fully independent once the company data exists in Neo4j.
+**Parallel execution:** All 3 collaborators can start as soon as the graph schema is known (🛠️ **Tobias** Task 2). 🎨 **Reyyan** needs scoring data (Task 9) for full functionality but can build UI with mock data first. 📋 **Beyza** and 🤖 **Zeynep** are fully independent once the company data exists in Neo4j.
 
 ---
 
@@ -381,10 +381,10 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 | Method | Path | Description | Owner |
 |--------|------|-------------|-------|
-| POST | `/api/graph/seed` | Seed ontology + baseline companies | You |
-| POST | `/api/graph/ingest` | Run all ingestion adapters (or `?source=fda-510k`) | You |
+| POST | `/api/graph/seed` | Seed ontology + baseline companies | Tobias |
+| POST | `/api/graph/ingest` | Run all ingestion adapters (or `?source=fda-510k`) | Tobias |
 | GET | `/api/graph/score` | Score all prospects (HOT/WARM/COLD) | A |
-| GET | `/api/graph/ingest/sources` | List registered adapters | You |
+| GET | `/api/graph/ingest/sources` | List registered adapters | Tobias |
 | GET | `/api/graph/health` | Neo4j connectivity check | — |
 | POST | `/api/graph/query` | Execute arbitrary Cypher | — |
 | POST | `/api/pipeline/start` | Start pipeline tracking for a lead | B |
