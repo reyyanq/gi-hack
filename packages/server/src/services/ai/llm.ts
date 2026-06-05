@@ -17,7 +17,7 @@ export function createAIProvider(config: AIConfig) {
 }
 
 export function isConfigured(apiKey: string | undefined): boolean {
-  return !!apiKey && apiKey !== "sk-your-key-here" && apiKey.startsWith("sk-");
+  return !!apiKey && apiKey.startsWith("sk-");
 }
 
 export async function askAI(

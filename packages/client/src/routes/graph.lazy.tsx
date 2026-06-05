@@ -47,8 +47,8 @@ export function GraphPage() {
       )}
 
       {seed.isSuccess && (
-        <div className="bg-green-900/50 border border-green-800 rounded p-3 text-sm">
-          {seed.data?.message} ({seed.data?.nodesSeeded} relationships created)
+        <div className="bg-green-900/50 border border-green-800 rounded p-3 text-sm text-green-300">
+          Seed completed — {JSON.stringify(seed.data)}
         </div>
       )}
     </div>

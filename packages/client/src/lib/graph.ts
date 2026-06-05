@@ -25,7 +25,7 @@ export function useGraphQuery() {
 export function useGraphSeed() {
   return useMutation({
     mutationFn: async () => {
-      const res = await apiPost<{ message: string; nodesSeeded: number }>("/api/graph/seed", {});
+      const res = await apiPost<Record<string, unknown>>("/api/graph/seed", {});
       if (!res.ok) throw new Error(res.error.message);
       return res.data;
     },

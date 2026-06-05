@@ -43,10 +43,7 @@ export async function runQuery(
   try {
     const result = await session.run(cypher, params);
     return {
-      records: result.records.map((record) => ({
-        keys: record.keys,
-        values: [...record.values()].map(String),
-      })),
+      records: result.records.map((record) => Object.fromEntries(record.keys.map((k) => [k, record.get(k)]))),
       summary: {
         counters: result.summary.counters.containsUpdates,
       },
