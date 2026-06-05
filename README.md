@@ -300,11 +300,11 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
-| 10 | `[ ]` | **API hooks** — useIngest, useSeed, useScores, useSources in TanStack Query | 🎨 A | `client/src/lib/graph.ts` |
-| 11 | `[ ]` | **Navigation** — add Leads, Pipeline, Admin links to RootLayout | 🎨 A | `client/src/routes/__root.tsx` |
-| 12 | `[ ]` | **Dashboard home** — 4 summary cards, Top 5 leads, Quick Actions (Seed/Ingest buttons) | 🎨 A | `client/src/routes/index.tsx` |
-| 13 | `[ ]` | **Lead Explorer** — score-sorted table with tier badges + score bars, search/filter, detail drawer with signals timeline + breakdown + outreach hook | 🎨 A | `client/src/routes/leads*.tsx` |
-| 14 | `[ ]` | **Admin panel** — per-source Run buttons, health status, scoring summary, Neo4j stats | 🎨 A | `client/src/routes/admin.tsx` |
+| 10 | `[ ]` | **API hooks** — useIngest, useSeed, useScores, useSources in TanStack Query | 🎨 **Reyyan** | `client/src/lib/graph.ts` |
+| 11 | `[ ]` | **Navigation** — add Leads, Pipeline, Admin links to RootLayout | 🎨 **Reyyan** | `client/src/routes/__root.tsx` |
+| 12 | `[ ]` | **Dashboard home** — 4 summary cards, Top 5 leads, Quick Actions (Seed/Ingest buttons) | 🎨 **Reyyan** | `client/src/routes/index.tsx` |
+| 13 | `[ ]` | **Lead Explorer** — score-sorted table with tier badges + score bars, search/filter, detail drawer with signals timeline + breakdown + outreach hook | 🎨 **Reyyan** | `client/src/routes/leads*.tsx` |
+| 14 | `[ ]` | **Admin panel** — per-source Run buttons, health status, scoring summary, Neo4j stats | 🎨 **Reyyan** | `client/src/routes/admin.tsx` |
 
 > **Depends on:** Phase 1 (for data), but buildable with mock data. **Delivers:** Full UI to browse/explore scored leads.
 
@@ -312,9 +312,9 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
-| 15 | `[ ]` | **Pipeline data model + API** — Contact/PipelineStage/Activity Cypher, POST start, PUT advance, GET leads, POST notes | 📋 B | `services/graph/pipeline/`, `routes/pipeline.ts` |
-| 16 | `[ ]` | **Pipeline React Query hooks** — usePipelineLeads, useAdvanceStage, useAddNote, useActivity | 📋 B | `client/src/lib/pipeline.ts` |
-| 17 | `[ ]` | **Pipeline kanban** — 5-column (New→Contacted→Meeting→Proposal→Closed), drag between stages, add note modal | 📋 B | `client/src/routes/pipeline.tsx` |
+| 15 | `[ ]` | **Pipeline data model + API** — Contact/PipelineStage/Activity Cypher, POST start, PUT advance, GET leads, POST notes | 📋 **Beyza** | `services/graph/pipeline/`, `routes/pipeline.ts` |
+| 16 | `[ ]` | **Pipeline React Query hooks** — usePipelineLeads, useAdvanceStage, useAddNote, useActivity | 📋 **Beyza** | `client/src/lib/pipeline.ts` |
+| 17 | `[ ]` | **Pipeline kanban** — 5-column (New→Contacted→Meeting→Proposal→Closed), drag between stages, add note modal | 📋 **Beyza** | `client/src/routes/pipeline.tsx` |
 
 > **Depends on:** Phase 1 (for companies). **Delivers:** Sales pipeline with stage tracking + activity log.
 
@@ -322,10 +322,10 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
-| 18 | `[ ]` | **AI enrichment** — LLM fills segment/domain/applications for companies | 🤖 C | `services/ai/enrich.ts` |
-| 19 | `[ ]` | **AI outreach** — LLM generates personalized cold email from signals + products | 🤖 C | `services/ai/outreach.ts` |
-| 20 | `[ ]` | **AI explainer + API** — LLM explains score breakdown, POST /enrich/:id, POST /outreach/:id, GET /explain/:id | 🤖 C | `services/ai/explain.ts`, `routes/ai.ts` |
-| 21 | `[ ]` | **AI UI** — "Enrich" / "Generate Email" / "Why this score?" buttons on lead detail drawer | 🤖 C | `client/src/routes/leads/$id.tsx` |
+| 18 | `[ ]` | **AI enrichment** — LLM fills segment/domain/applications for companies | 🤖 **Zeynep** | `services/ai/enrich.ts` |
+| 19 | `[ ]` | **AI outreach** — LLM generates personalized cold email from signals + products | 🤖 **Zeynep** | `services/ai/outreach.ts` |
+| 20 | `[ ]` | **AI explainer + API** — LLM explains score breakdown, POST /enrich/:id, POST /outreach/:id, GET /explain/:id | 🤖 **Zeynep** | `services/ai/explain.ts`, `routes/ai.ts` |
+| 21 | `[ ]` | **AI UI** — "Enrich" / "Generate Email" / "Why this score?" buttons on lead detail drawer | 🤖 **Zeynep** | `client/src/routes/leads/$id.tsx` |
 
 > **Depends on:** Phase 1 + Phase 2 (for data + detail drawer). **Delivers:** AI-powered enrichment, outreach emails, score explanations.
 
