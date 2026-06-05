@@ -157,7 +157,7 @@ export class SourceManager {
     }
   }
 
-  async runAll(): Promise<IngestionSummary[]> {
+  async runAll(onProgress?: (summary: IngestionSummary) => void): Promise<IngestionSummary[]> {
     const sorted = Array.from(this.pool.entries())
       .filter(([, e]) => e.config.enabled)
       .sort(([, a], [, b]) => b.config.weight - a.config.weight);
@@ -173,11 +173,19 @@ export class SourceManager {
       }
       const task = (async () => {
         const result = await this.fetchAdapterCandidates(id);
+        const summary: IngestionSummary = {
+          sourceId: id,
+          fetched: result.candidates.length,
+          created: 0,
+          failed: result.error ? result.candidates.length : 0,
+          errors: result.error ? [result.error] : [],
+        };
         fetchResults.push({
           sourceId: id,
           candidates: result.candidates,
           errors: result.error ? [result.error] : [],
         });
+        if (onProgress) onProgress(summary);
       })();
       running.add(task);
       task.finally(() => running.delete(task));
@@ -195,6 +203,14 @@ export class SourceManager {
     }
 
     // Phase 3: Merge signals for same-company groups, then upsert
+    // Build reverse mapping from candidate sourceId → adapter sourceId
+    const candidateToAdapter = new Map<string, string>();
+    for (const fr of fetchResults) {
+      for (const c of fr.candidates) {
+        candidateToAdapter.set(c.sourceId, fr.sourceId);
+      }
+    }
+
     const summaries = new Map<string, IngestionSummary>();
     for (const fr of fetchResults) {
       summaries.set(fr.sourceId, {
@@ -213,19 +229,19 @@ export class SourceManager {
       merged.companyName = bestName.companyName;
       merged.domain = bestName.domain ?? merged.domain;
 
-      // Track which sources contributed to this company
-      const sourceIds = [...new Set(group.map((c) => c.sourceId))];
+      // Track which adapters contributed to this company (map candidate ID → adapter ID)
+      const adapterIds = [...new Set(group.map((c) => candidateToAdapter.get(c.sourceId) ?? c.sourceId))];
 
       try {
         await upsertCompany(merged);
-        for (const sid of sourceIds) {
-          const s = summaries.get(sid);
+        for (const aid of adapterIds) {
+          const s = summaries.get(aid);
           if (s) s.created++;
         }
       } catch (err) {
         const msg = `Upsert fail ${merged.companyName}: ${err instanceof Error ? err.message : String(err)}`;
-        for (const sid of sourceIds) {
-          const s = summaries.get(sid);
+        for (const aid of adapterIds) {
+          const s = summaries.get(aid);
           if (s) {
             s.failed++;
             s.errors.push(msg);
