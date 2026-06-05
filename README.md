@@ -284,15 +284,15 @@ See the full spec at [`docs/superpowers/specs/2026-06-05-leadgraph-ingestion-des
 
 | # | Check | Task | Owner | Files |
 |---|-------|------|-------|-------|
-| 1 | `[ ]` | **queryRows helper** — add native-record Cypher helper to `neo4j.ts` for scorer | 🛠️ **Tobias** | `services/graph/neo4j.ts` |
-| 2 | `[ ]` | **Types** — SourceAdapter interface, SourceConfig, scoring types (TierLevel, ScoreBreakdown, ScoredCompany) | 🛠️ **Tobias** | `services/graph/ingest/types.ts` |
-| 3 | `[ ]` | **Ontology seed** — constraints, 7 applications, 10 Siemens products, 15 competitor companies, seed signals | 🛠️ **Tobias** | `services/graph/ingest/ontology.ts` |
-| 4 | `[ ]` | **5 stub adapters** — ClinicalTrials, Patent, Hiring, Conference, Funding (hardcoded records → LeadCandidate) | 🛠️ **Tobias** | `services/graph/ingest/adapters/*-stub.ts` |
-| 5 | `[ ]` | **FDA adapter** — real `api.fda.gov/device/510k` with 8 product code filters, company extraction | 🛠️ **Tobias** | `services/graph/ingest/adapters/fda-510k.ts` |
-| 6 | `[ ]` | **GitHub adapter** — real `api.github.com` keyword search, org detection, topic→application mapping | 🛠️ **Tobias** | `services/graph/ingest/adapters/github.ts` |
-| 7 | `[ ]` | **SourceManager** — concurrent runner, pool=3, weight-sorted, dedup, Neo4j upsert | 🛠️ **Tobias** | `services/graph/ingest/orchestrator.ts` |
-| 8 | `[ ]` | **Index + routes** — singleton SourceManager with all 7 adapters, POST /ingest, GET /sources | 🛠️ **Tobias** | `ingest/index.ts`, `routes/graph.ts` |
-| 9 | `[ ]` | **CLI + Scoring** — `npm run ingest`, `npm run score`. Scorer computes signal (0-40) + product fit (0-30) + segment bonus (0-20) + recency (0-10) → HOT/WARM/COLD | 🛠️ **Tobias** | `scripts/ingest.ts`, `scoring/scorer.ts` |
+| 1 | `[x]` | **queryRows helper** — add native-record Cypher helper to `neo4j.ts` for scorer | 🛠️ **Tobias** | `services/graph/neo4j.ts` |
+| 2 | `[x]` | **Types** — SourceAdapter interface, SourceConfig, scoring types (TierLevel, ScoreBreakdown, ScoredCompany) | 🛠️ **Tobias** | `services/graph/ingest/types.ts` |
+| 3 | `[x]` | **Ontology seed** — constraints, 7 applications, 10 Siemens products, 15 competitor companies, seed signals | 🛠️ **Tobias** | `services/graph/ingest/ontology.ts` |
+| 4 | `[x]` | **5 stub adapters** — ClinicalTrials, Patent, Hiring, Conference, Funding (hardcoded records → LeadCandidate) | 🛠️ **Tobias** | `services/graph/ingest/adapters/*-stub.ts` |
+| 5 | `[x]` | **FDA adapter** — real `api.fda.gov/device/510k` with 8 product code filters, company extraction | 🛠️ **Tobias** | `services/graph/ingest/adapters/fda-510k.ts` |
+| 6 | `[x]` | **GitHub adapter** — real `api.github.com` keyword search, org detection, topic→application mapping | 🛠️ **Tobias** | `services/graph/ingest/adapters/github.ts` |
+| 7 | `[x]` | **SourceManager** — concurrent runner, pool=3, weight-sorted, dedup, Neo4j upsert | 🛠️ **Tobias** | `services/graph/ingest/orchestrator.ts` |
+| 8 | `[x]` | **Index + routes** — singleton SourceManager with all 7 adapters, POST /ingest, GET /sources | 🛠️ **Tobias** | `ingest/index.ts`, `routes/graph.ts` |
+| 9 | `[x]` | **CLI + Scoring** — `npm run ingest`, `npm run score`. Scorer computes signal (0-40) + product fit (0-30) + segment bonus (0-20) + recency (0-10) → HOT/WARM/COLD | 🛠️ **Tobias** | `scripts/ingest.ts`, `scoring/scorer.ts` |
 
 > **Depends on:** Nothing. **Delivers:** Neo4j populated with companies, signals, scores.
 
