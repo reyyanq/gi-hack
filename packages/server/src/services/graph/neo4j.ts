@@ -53,6 +53,30 @@ export async function runQuery(
   }
 }
 
+/**
+ * Run Cypher and return records with native Neo4j type access (numbers, dates, nulls preserved).
+ * Use this for queries that read property values where types matter (e.g., scoring).
+ */
+export async function queryRows(
+  cypher: string,
+  params: Record<string, unknown> = {}
+): Promise<any[]> {
+  if (!driver) throw new Error("Neo4j driver not initialized");
+
+  const session: Session = driver.session();
+  try {
+    const result = await session.run(cypher, params);
+    return result.records.map((record) => ({
+      keys: record.keys,
+      ...Object.fromEntries(
+        record.keys.map((key) => [key, record.get(key)])
+      ),
+    }));
+  } finally {
+    await session.close();
+  }
+}
+
 export async function closeDriver(): Promise<void> {
   if (driver) {
     await driver.close();
