@@ -123,6 +123,19 @@ export class SourceManager {
     return Array.from(this.pool.keys());
   }
 
+  async getRegisteredHealth(): Promise<Array<{ id: string; healthy: boolean; error?: string }>> {
+    const results: Array<{ id: string; healthy: boolean; error?: string }> = [];
+    for (const [id, entry] of this.pool) {
+      try {
+        const healthy = await entry.adapter.healthCheck();
+        results.push({ id, healthy });
+      } catch (err) {
+        results.push({ id, healthy: false, error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+    return results;
+  }
+
   /**
    * Fetch + normalize from a single adapter. Returns candidates instead of upserting,
    * so the caller can cross-source deduplicate first.

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { runQuery, verifyConnection } from "../services/graph/neo4j.js";
-import { seedGraph, getOrchestrator } from "../services/graph/ingest/index.js";
+import { seedGraph, truncateGraph, getOrchestrator } from "../services/graph/ingest/index.js";
 
 const router = Router();
 
@@ -51,16 +51,36 @@ router.post("/ingest", async (req: Request, res: Response) => {
   }
 });
 
+router.delete("/ingest", async (_req: Request, res: Response) => {
+  try {
+    const result = await truncateGraph();
+    res.json({ ok: true, data: result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ ok: false, error: { code: "TRUNCATE_FAILED", message } });
+  }
+});
+
 router.get("/ingest/sources", async (_req: Request, res: Response) => {
   const orchestrator = getOrchestrator();
-  res.json({ ok: true, data: { sources: orchestrator.getRegistered() } });
+  const names = orchestrator.getRegistered();
+  const health = await orchestrator.getRegisteredHealth();
+  res.json({ ok: true, data: { sources: names, health } });
 });
 
 router.get("/score", async (_req: Request, res: Response) => {
   try {
     const { scoreAll } = await import("../services/graph/scoring/scorer.js");
-    const results = await scoreAll();
-    res.json({ ok: true, data: { companies: results } });
+    const companies = await scoreAll();
+    const total = companies.length;
+    const hot = companies.filter((c) => c.tier === "HOT").length;
+    const warm = companies.filter((c) => c.tier === "WARM").length;
+    const cold = companies.filter((c) => c.tier === "COLD").length;
+    const avgScore = total > 0 ? Math.round(companies.reduce((s, c) => s + c.totalScore, 0) / total) : 0;
+    res.json({
+      ok: true,
+      data: { companies, summary: { total, hot, warm, cold, avgScore } },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     res.status(500).json({ ok: false, error: { code: "SCORING_FAILED", message } });

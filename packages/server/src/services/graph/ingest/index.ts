@@ -2,6 +2,7 @@ export { type SourceAdapter, type RawLead, type LeadCandidate, type Signal, type
 export { type SourceConfig, type IngestionSummary, type SeedSummary } from "./types.js";
 export { type TierLevel, type ScoredCompany, type ScoreBreakdown, type Disqualifier } from "./types.js";
 export { seedGraph } from "./ontology.js";
+import { runQuery } from "../neo4j.js";
 import { SourceManager } from "./orchestrator.js";
 export { SourceManager };
 
@@ -27,4 +28,15 @@ export function getOrchestrator(): SourceManager {
     managerInstance.register(new FundingStubAdapter(), { weight: 10 });
   }
   return managerInstance;
+}
+
+export async function truncateGraph(): Promise<{ nodesDeleted: number }> {
+  const result = await runQuery(
+    `MATCH (n)
+     WHERE n:Company OR n:Signal OR n:Product OR n:Application
+     DETACH DELETE n
+     RETURN count(n) AS nodesDeleted`
+  );
+  const nodesDeleted = Number(result.records?.[0]?.get("nodesDeleted") ?? 0);
+  return { nodesDeleted };
 }

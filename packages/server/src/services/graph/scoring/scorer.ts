@@ -65,16 +65,16 @@ function generateHook(signals: SignalRow[]): string | undefined {
 export async function scoreAll(): Promise<ScoredResult[]> {
   const result = await queryRows(
     `MATCH (c:Company)
-     WHERE NOT EXISTS {
+     WHERE c.name <> "Siemens Healthineers"
+     AND NOT EXISTS {
        MATCH (c)-[:SUPPLIES_TO]->(:Company {name: "Siemens Healthineers"})
      }
-     AND c.name <> "Siemens Healthineers"
      OPTIONAL MATCH (c)-[:HAS_SIGNAL]->(s:Signal)
      OPTIONAL MATCH (c)-[:DEVELOPS]->(a:Application)
      RETURN c.name AS name,
             c.domain AS domain,
             c.segment AS segment,
-            collect(DISTINCT {type: s.type, date: s.date, confidence: s.confidence, description: s.description}) AS signals,
+            [sig IN collect(DISTINCT {type: s.type, date: s.date, confidence: s.confidence, description: s.description}) WHERE sig.type IS NOT NULL] AS signals,
             collect(DISTINCT a.name) AS applications
      ORDER BY c.name`
   );
@@ -92,7 +92,7 @@ export async function scoreAll(): Promise<ScoredResult[]> {
 
   for (const row of rows) {
     const disqualifiers: string[] = [];
-    const validSignals = (row.signals ?? []).filter((s) => s?.type && s?.date);
+    const validSignals = (row.signals ?? []) as SignalRow[];
 
     if (validSignals.length === 0) disqualifiers.push("No signals detected — insufficient data");
     if (!row.domain) disqualifiers.push("No domain/website — hard to qualify");
