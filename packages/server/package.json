@@ -6,7 +6,12 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ingest": "tsx src/scripts/ingest.ts",
+    "ingest:seed": "tsx src/scripts/ingest.ts --seed",
+    "ingest:fda": "tsx src/scripts/ingest.ts --source=fda-510k",
+    "ingest:score": "tsx src/scripts/ingest.ts --seed --score",
+    "score": "tsx src/scripts/scoring.ts"
   },
   "dependencies": {
     "@gi-hack/shared": "*",
