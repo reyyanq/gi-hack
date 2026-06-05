@@ -46,7 +46,6 @@ function generateHook(signals: SignalRow[]): string | undefined {
   const sorted = [...signals].filter((s) => s.type && s.date).sort((a, b) => b.confidence - a.confidence);
   if (sorted.length === 0) return undefined;
   const top = sorted[0];
-  const desc = top.description ?? "";
   switch (top.type) {
     case "FDA_CLEARANCE":
       return `Congrats on the recent clearance — how are you sourcing raw materials for scale-up?`;

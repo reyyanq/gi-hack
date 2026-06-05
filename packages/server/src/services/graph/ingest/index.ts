@@ -2,7 +2,8 @@ export { type SourceAdapter, type RawLead, type LeadCandidate, type Signal, type
 export { type SourceConfig, type IngestionSummary, type SeedSummary } from "./types.js";
 export { type TierLevel, type ScoredCompany, type ScoreBreakdown, type Disqualifier } from "./types.js";
 export { seedGraph } from "./ontology.js";
-export { SourceManager } from "./orchestrator.js";
+import { SourceManager } from "./orchestrator.js";
+export { SourceManager };
 
 import { FDA510kAdapter } from "./adapters/fda-510k.js";
 import { GitHubSourceAdapter } from "./adapters/github.js";
