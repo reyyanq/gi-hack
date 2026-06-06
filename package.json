@@ -10,7 +10,9 @@
     "dev:server": "npm -w packages/server run dev",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "db:export": "npm -w packages/server run db:export",
+    "db:bootstrap": "npm -w packages/server run db:bootstrap"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

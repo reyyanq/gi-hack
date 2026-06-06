@@ -11,7 +11,9 @@
     "ingest:seed": "tsx src/scripts/ingest.ts --seed",
     "ingest:fda": "tsx src/scripts/ingest.ts --source=fda-510k",
     "ingest:score": "tsx src/scripts/ingest.ts --seed --score",
-    "score": "tsx src/scripts/scoring.ts"
+    "score": "tsx src/scripts/scoring.ts",
+    "db:export": "tsx src/scripts/export-bootstrap.ts",
+    "db:bootstrap": "tsx src/scripts/run-bootstrap.ts"
   },
   "dependencies": {
     "@gi-hack/shared": "*",

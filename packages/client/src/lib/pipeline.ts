@@ -1,147 +1,136 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type {
-  PipelineLead,
-  ActivityNote,
-  StartPipelineInput,
-  AddNoteInput,
-  PipelineSummary,
-  PipelineStage,
-} from "@gi-hack/shared";    // ← tek değişen satır bu
+import { apiGet, apiPost, apiPut } from "./api";
 
-// Re-export types for convenience in UI components
-export type { PipelineLead, ActivityNote, PipelineStage, PipelineSummary };
-
-// ── Base fetch helper ─────────────────────────────────────────
-
-const API = "/api/pipeline";
-
-async function apiFetch<T>(
-  path: string,
-  options?: RequestInit
-): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-  const json = await res.json();
-  if (!json.ok) {
-    throw new Error(json.error?.message ?? "API error");
-  }
-  return json.data as T;
+export interface PipelineLead {
+  companyName: string;
+  companyDomain?: string;
+  companySegment?: string;
+  companyDescription?: string;
+  contacts: ContactSummary[];
+  currentStage: StageName;
+  lastActivity?: string;
 }
 
-// ── Query Keys ────────────────────────────────────────────────
+export interface ContactSummary {
+  id: string;
+  name: string;
+  email?: string;
+  role?: string;
+  stage: string;
+  enteredAt: string;
+}
 
-export const pipelineKeys = {
-  all:      ["pipeline"] as const,
-  leads:    () => [...pipelineKeys.all, "leads"] as const,
-  summary:  () => [...pipelineKeys.all, "summary"] as const,
-  activity: (id: string) => [...pipelineKeys.all, "activity", id] as const,
-};
+export interface ActivityEntry {
+  id: string;
+  type: string;
+  note: string;
+  date: string;
+}
 
-// ── usePipelineLeads ──────────────────────────────────────────
+export const STAGES = ["New", "Contacted", "Meeting", "Proposal", "Closed Won", "Closed Lost"] as const;
+export type StageName = (typeof STAGES)[number];
 
 export function usePipelineLeads() {
   return useQuery({
-    queryKey: pipelineKeys.leads(),
-    queryFn: () => apiFetch<PipelineLead[]>("/leads"),
-    refetchInterval: 30_000,
+    queryKey: ["pipeline", "leads"],
+    queryFn: async () => {
+      const res = await apiGet<{ leads: PipelineLead[] }>("/api/pipeline/leads");
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data.leads;
+    },
+    refetchInterval: 15_000,
   });
 }
 
-// ── usePipelineSummary ────────────────────────────────────────
-
-export function usePipelineSummary() {
+export function usePipelineStages() {
   return useQuery({
-    queryKey: pipelineKeys.summary(),
-    queryFn: () => apiFetch<PipelineSummary>("/summary"),
+    queryKey: ["pipeline", "stages"],
+    queryFn: async () => {
+      const res = await apiGet<{ stages: string[] }>("/api/pipeline/stages");
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data.stages;
+    },
+    staleTime: Infinity,
   });
 }
-
-// ── useActivity ───────────────────────────────────────────────
-
-export function useActivity(contactId: string | null) {
-  return useQuery({
-    queryKey: pipelineKeys.activity(contactId ?? ""),
-    queryFn: () => apiFetch<ActivityNote[]>(`/${contactId}/activity`),
-    enabled: Boolean(contactId),
-  });
-}
-
-// ── useStartPipeline ──────────────────────────────────────────
 
 export function useStartPipeline() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: StartPipelineInput) =>
-      apiFetch<PipelineLead>("/start", {
-        method: "POST",
-        body: JSON.stringify(input),
-      }),
+    mutationFn: async (params: {
+      companyName: string;
+      contactName?: string;
+      contactEmail?: string;
+      contactRole?: string;
+    }) => {
+      const res = await apiPost<{ contactId: string }>("/api/pipeline/start", params);
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data;
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: pipelineKeys.leads() });
-      queryClient.invalidateQueries({ queryKey: pipelineKeys.summary() });
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
     },
   });
 }
-
-// ── useAdvanceStage ───────────────────────────────────────────
 
 export function useAdvanceStage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      contactId,
-      targetStage,
-    }: {
-      contactId: string;
-      targetStage?: PipelineStage;
-    }) =>
-      apiFetch<PipelineLead>(`/${contactId}/advance`, {
-        method: "PUT",
-        body: JSON.stringify({ stage: targetStage }),
-      }),
-    onMutate: async ({ contactId, targetStage }) => {
-      await queryClient.cancelQueries({ queryKey: pipelineKeys.leads() });
-      const previous = queryClient.getQueryData<PipelineLead[]>(pipelineKeys.leads());
-
-      if (previous && targetStage) {
-        queryClient.setQueryData<PipelineLead[]>(
-          pipelineKeys.leads(),
-          previous.map((lead) =>
-            lead.id === contactId ? { ...lead, stage: targetStage } : lead
-          )
-        );
-      }
-      return { previous };
+    mutationFn: async (contactId: string) => {
+      const res = await apiPut<{ newStage: string }>(`/api/pipeline/${contactId}/advance`, {});
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data;
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(pipelineKeys.leads(), context.previous);
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: pipelineKeys.leads() });
-      queryClient.invalidateQueries({ queryKey: pipelineKeys.summary() });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
     },
   });
 }
 
-// ── useAddNote ────────────────────────────────────────────────
-
-export function useAddNote() {
+export function useRegressStage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (input: AddNoteInput) =>
-      apiFetch<ActivityNote>(`/${input.contactId}/notes`, {
-        method: "POST",
-        body: JSON.stringify({ note: input.note, type: input.type ?? "NOTE" }),
-      }),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: pipelineKeys.activity(variables.contactId),
+    mutationFn: async (params: { contactId: string; stage: string }) => {
+      const res = await apiPut<{ newStage: string }>(`/api/pipeline/${params.contactId}/regress`, {
+        stage: params.stage,
       });
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+    },
+  });
+}
+
+export function useAddActivity() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: { contactId: string; type: string; note: string }) => {
+      const res = await apiPost<{ activityId: string }>(
+        `/api/pipeline/${params.contactId}/activity`,
+        { type: params.type, note: params.note }
+      );
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pipeline"] });
+    },
+  });
+}
+
+export function useContactActivity(contactId: string | null) {
+  return useQuery({
+    queryKey: ["pipeline", "activity", contactId],
+    queryFn: async () => {
+      if (!contactId) return [];
+      const res = await apiGet<{ activities: ActivityEntry[] }>(
+        `/api/pipeline/${contactId}/activity`
+      );
+      if (!res.ok) throw new Error(res.error.message);
+      return res.data.activities;
+    },
+    enabled: !!contactId,
   });
 }

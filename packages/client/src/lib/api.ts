@@ -27,3 +27,15 @@ export async function apiGet<T>(path: string): Promise<ApiResponse<T>> {
   const res = await fetch(path);
   return res.json() as Promise<ApiResponse<T>>;
 }
+
+export async function apiPut<T>(
+  path: string,
+  body: Record<string, unknown>
+): Promise<ApiResponse<T>> {
+  const res = await fetch(path, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  return res.json() as Promise<ApiResponse<T>>;
+}

@@ -1,266 +1,216 @@
+import { runQuery } from "../neo4j.js";
 
-import { runQuery, queryRows } from "../neo4j.js";
-import {
-  PipelineLead,
-  ActivityNote,
-  StartPipelineInput,
-  AddNoteInput,
-  PipelineSummary,
-  PIPELINE_STAGES,
-  PipelineStage,
-} from "./types.js";
+const STAGES = ["New", "Contacted", "Meeting", "Proposal", "Closed Won", "Closed Lost"] as const;
+export type PipelineStage = (typeof STAGES)[number];
 
-function nowISO(): string {
-  return new Date().toISOString();
+export interface PipelineLead {
+  companyName: string;
+  companyDomain?: string;
+  companySegment?: string;
+  companyDescription?: string;
+  contacts: ContactSummary[];
+  currentStage: PipelineStage;
+  lastActivity?: string;
 }
 
-function mapRowToLead(row: any): PipelineLead {
-  return {
-    id: row.id,
-    contactName: row.contactName,
-    email: row.email ?? undefined,
-    role: row.role ?? undefined,
-    companyName: row.companyName,
-    companyDomain: row.companyDomain ?? undefined,
-    companyTier: row.companyTier ?? undefined,
-    companyScore: row.companyScore ?? undefined,
-    stage: row.stage as PipelineStage,
-    stageEnteredAt: row.stageEnteredAt,
-    notes: [],
-  };
+export interface ContactSummary {
+  id: string;
+  name: string;
+  email?: string;
+  role?: string;
+  stage: string;
+  enteredAt: string;
 }
 
-function mapRowToNote(row: any): ActivityNote {
-  return {
-    id: row.id,
-    type: row.type as ActivityNote["type"],
-    note: row.note,
-    date: row.date,
-    createdBy: row.createdBy ?? undefined,
-  };
+export interface ActivityEntry {
+  id: string;
+  type: string;
+  note: string;
+  date: string;
 }
 
-// ── POST /api/pipeline/start ─────────────────────────────────
+export { STAGES };
 
-export async function startPipeline(input: StartPipelineInput): Promise<PipelineLead> {
-  const { companyName, contactName, email, role } = input;
-  const now = nowISO();
-
-  // Check company exists — queryRows returns plain array
-  const companyCheck = await queryRows(
-    `MATCH (c:Company {name: $companyName}) RETURN c.name AS name LIMIT 1`,
-    { companyName }
+export async function ensurePipelineStages(): Promise<void> {
+  await runQuery(
+    `UNWIND $stages AS stageName
+     MERGE (s:PipelineStage {name: stageName})`,
+    { stages: STAGES }
   );
-  if (companyCheck.length === 0) {
-    throw new Error(`Company "${companyName}" not found. Run ingest:seed first.`);
-  }
+}
 
-  const rows = await queryRows(
-    `MATCH (company:Company {name: $companyName})
-     CREATE (contact:Contact {
+export async function startPipeline(companyName: string, contactName?: string, contactEmail?: string, contactRole?: string): Promise<{ contactId: string }> {
+  const result = await runQuery(
+    `MATCH (c:Company)
+     WHERE c.name = $companyName OR c.normalizedName = $normName
+     WITH c LIMIT 1
+     MERGE (contact:Contact {
+       id: randomUUID(),
        name: $contactName,
        email: $email,
-       role: $role,
-       createdAt: $now
+       role: $role
      })
-     CREATE (stage:PipelineStage {
-       stage: $stage,
-       enteredAt: $now
-     })
-     CREATE (activity:Activity {
-       type: "STAGE_CHANGE",
-       note: $activityNote,
-       date: $now
-     })
-     MERGE (contact)-[:CONTACT_AT]->(company)
-     MERGE (contact)-[:IN_STAGE]->(stage)
-     MERGE (contact)-[:HAS_ACTIVITY]->(activity)
-     RETURN
-       elementId(contact)   AS id,
-       contact.name         AS contactName,
-       contact.email        AS email,
-       contact.role         AS role,
-       company.name         AS companyName,
-       company.domain       AS companyDomain,
-       company.tier         AS companyTier,
-       company.score        AS companyScore,
-       stage.stage          AS stage,
-       stage.enteredAt      AS stageEnteredAt`,
+     MERGE (contact)-[:CONTACT_AT]->(c)
+     WITH contact
+     MATCH (s:PipelineStage {name: "New"})
+     MERGE (contact)-[r:IN_STAGE]->(s)
+     SET r.enteredAt = toString(datetime())
+     RETURN contact.id AS contactId`,
     {
       companyName,
-      contactName,
-      email: email ?? null,
-      role: role ?? null,
-      stage: "New",
-      activityNote: `Lead entered pipeline — Stage: New`,
-      now,
+      normName: companyName.toLowerCase().replace(/[^a-z0-9]/g, ""),
+      contactName: contactName ?? `Contact at ${companyName}`,
+      email: contactEmail ?? null,
+      role: contactRole ?? null,
     }
   );
 
-  if (rows.length === 0) throw new Error("Failed to create pipeline lead");
-  return mapRowToLead(rows[0]);
+  const contactId = (result.records?.[0] as any)?.contactId;
+  if (!contactId) throw new Error(`Company "${companyName}" not found in graph`);
+  return { contactId };
 }
 
-// ── GET /api/pipeline/leads ───────────────────────────────────
+export async function advanceStage(contactId: string): Promise<{ newStage: string }> {
+  const current = await runQuery(
+    `MATCH (c:Contact {id: $contactId})-[r:IN_STAGE]->(s:PipelineStage)
+     RETURN s.name AS stage, r.enteredAt AS enteredAt`,
+    { contactId }
+  );
+
+  const currentStage = (current.records?.[0] as any)?.stage;
+  if (!currentStage) throw new Error(`Contact "${contactId}" is not in a pipeline stage`);
+
+  const idx = STAGES.indexOf(currentStage);
+  if (idx === -1) throw new Error(`Unknown stage "${currentStage}"`);
+  if (idx >= STAGES.length - 2) throw new Error("Already at final stage — cannot advance further");
+
+  const nextStage = STAGES[idx + 1];
+
+  await runQuery(
+    `MATCH (c:Contact {id: $contactId})-[r:IN_STAGE]->(s:PipelineStage)
+     DELETE r
+     WITH c
+     MATCH (next:PipelineStage {name: $nextStage})
+     MERGE (c)-[:IN_STAGE {enteredAt: toString(datetime())}]->(next)`,
+    { contactId, nextStage }
+  );
+
+  return { newStage: nextStage };
+}
+
+export async function regressStage(contactId: string, targetStage: string): Promise<{ newStage: string }> {
+  if (!STAGES.includes(targetStage as PipelineStage)) {
+    throw new Error(`Invalid stage "${targetStage}". Valid: ${STAGES.join(", ")}`);
+  }
+
+  await runQuery(
+    `MATCH (c:Contact {id: $contactId})-[r:IN_STAGE]->(s:PipelineStage)
+     DELETE r
+     WITH c
+     MATCH (next:PipelineStage {name: $targetStage})
+     MERGE (c)-[:IN_STAGE {enteredAt: toString(datetime())}]->(next)`,
+    { contactId, targetStage }
+  );
+
+  return { newStage: targetStage };
+}
+
+export async function addActivity(contactId: string, type: string, note: string): Promise<{ activityId: string }> {
+  const result = await runQuery(
+    `MATCH (c:Contact {id: $contactId})
+     CREATE (a:Activity {
+       id: randomUUID(),
+       type: $type,
+       note: $note,
+       date: toString(datetime())
+     })
+     MERGE (c)-[:HAS_ACTIVITY]->(a)
+     RETURN a.id AS activityId`,
+    { contactId, type, note }
+  );
+
+  const activityId = (result.records?.[0] as any)?.activityId;
+  if (!activityId) throw new Error(`Contact "${contactId}" not found`);
+  return { activityId };
+}
 
 export async function getPipelineLeads(): Promise<PipelineLead[]> {
-  const rows = await queryRows(
-    `MATCH (contact:Contact)-[:IN_STAGE]->(stage:PipelineStage)
-     MATCH (contact)-[:CONTACT_AT]->(company:Company)
-     OPTIONAL MATCH (contact)-[:HAS_ACTIVITY]->(activity:Activity)
-     WITH contact, stage, company,
-          collect({
-            id:   elementId(activity),
-            type: activity.type,
-            note: activity.note,
-            date: activity.date
-          }) AS activities
-     RETURN
-       elementId(contact)   AS id,
-       contact.name         AS contactName,
-       contact.email        AS email,
-       contact.role         AS role,
-       company.name         AS companyName,
-       company.domain       AS companyDomain,
-       company.tier         AS companyTier,
-       company.score        AS companyScore,
-       stage.stage          AS stage,
-       stage.enteredAt      AS stageEnteredAt,
-       activities           AS notes
-     ORDER BY stage.enteredAt DESC`
+  const result = await runQuery(
+    `MATCH (contact:Contact)-[:CONTACT_AT]->(company:Company)
+     OPTIONAL MATCH (contact)-[stageRel:IN_STAGE]->(stage:PipelineStage)
+     OPTIONAL MATCH (contact)-[:HAS_ACTIVITY]->(a:Activity)
+     WITH contact, company, stageRel, stage, a
+     ORDER BY a.date DESC
+     WITH contact, company, stageRel, stage, collect(a)[0] AS latestActivity
+     RETURN company.name AS companyName,
+            company.domain AS companyDomain,
+            company.segment AS companySegment,
+            company.description AS companyDescription,
+            contact.id AS contactId,
+            contact.name AS contactName,
+            contact.email AS contactEmail,
+            contact.role AS contactRole,
+            stage.name AS currentStage,
+            stageRel.enteredAt AS enteredAt,
+            latestActivity.date AS lastActivity,
+            latestActivity.note AS lastActivityNote,
+            latestActivity.type AS lastActivityType
+     ORDER BY stageRel.enteredAt DESC`
   );
 
-  return rows.map((row) => ({
-    ...mapRowToLead(row),
-    notes: (row.notes ?? [])
-      .filter((n: any) => n.id !== null)
-      .map(mapRowToNote),
-  }));
-}
-
-// ── PUT /api/pipeline/:id/advance ────────────────────────────
-
-export async function advanceStage(
-  contactId: string,
-  targetStage?: PipelineStage
-): Promise<PipelineLead> {
-  const now = nowISO();
-
-  const current = await queryRows(
-    `MATCH (contact:Contact)-[:IN_STAGE]->(stage:PipelineStage)
-     WHERE elementId(contact) = $contactId
-     RETURN stage.stage AS currentStage`,
-    { contactId }
-  );
-
-  if (current.length === 0) throw new Error(`Lead "${contactId}" not found`);
-
-  const currentStage = current[0].currentStage as PipelineStage;
-  const currentIndex = PIPELINE_STAGES.indexOf(currentStage);
-
-  let nextStage: PipelineStage;
-  if (targetStage) {
-    nextStage = targetStage;
-  } else {
-    const nextIndex = Math.min(currentIndex + 1, PIPELINE_STAGES.indexOf("Closed Won"));
-    nextStage = PIPELINE_STAGES[nextIndex];
-  }
-
-  if (nextStage === currentStage) throw new Error(`Already at stage "${currentStage}"`);
-
-  const rows = await queryRows(
-    `MATCH (contact:Contact)-[r:IN_STAGE]->(oldStage:PipelineStage)
-     WHERE elementId(contact) = $contactId
-     MATCH (contact)-[:CONTACT_AT]->(company:Company)
-     DELETE r, oldStage
-     CREATE (newStage:PipelineStage { stage: $nextStage, enteredAt: $now })
-     CREATE (activity:Activity { type: "STAGE_CHANGE", note: $activityNote, date: $now })
-     MERGE (contact)-[:IN_STAGE]->(newStage)
-     MERGE (contact)-[:HAS_ACTIVITY]->(activity)
-     RETURN
-       elementId(contact)   AS id,
-       contact.name         AS contactName,
-       contact.email        AS email,
-       contact.role         AS role,
-       company.name         AS companyName,
-       company.domain       AS companyDomain,
-       company.tier         AS companyTier,
-       company.score        AS companyScore,
-       newStage.stage       AS stage,
-       newStage.enteredAt   AS stageEnteredAt`,
-    {
-      contactId,
-      nextStage,
-      activityNote: `Stage changed: ${currentStage} → ${nextStage}`,
-      now,
-    }
-  );
-
-  if (rows.length === 0) throw new Error("Failed to advance stage");
-  return mapRowToLead(rows[0]);
-}
-
-// ── POST /api/pipeline/:id/notes ─────────────────────────────
-
-export async function addNote(input: AddNoteInput): Promise<ActivityNote> {
-  const { contactId, note, type = "NOTE" } = input;
-  const now = nowISO();
-
-  const rows = await queryRows(
-    `MATCH (contact:Contact)
-     WHERE elementId(contact) = $contactId
-     CREATE (activity:Activity { type: $type, note: $note, date: $now })
-     MERGE (contact)-[:HAS_ACTIVITY]->(activity)
-     RETURN
-       elementId(activity) AS id,
-       activity.type       AS type,
-       activity.note       AS note,
-       activity.date       AS date`,
-    { contactId, type, note, now }
-  );
-
-  if (rows.length === 0) throw new Error("Failed to add note");
-  return mapRowToNote(rows[0]);
-}
-
-// ── GET /api/pipeline/:id/activity ───────────────────────────
-
-export async function getActivity(contactId: string): Promise<ActivityNote[]> {
-  const rows = await queryRows(
-    `MATCH (contact:Contact)-[:HAS_ACTIVITY]->(activity:Activity)
-     WHERE elementId(contact) = $contactId
-     RETURN
-       elementId(activity) AS id,
-       activity.type       AS type,
-       activity.note       AS note,
-       activity.date       AS date
-     ORDER BY activity.date DESC`,
-    { contactId }
-  );
-
-  return rows.map(mapRowToNote);
-}
-
-// ── GET /api/pipeline/summary ─────────────────────────────────
-
-export async function getPipelineSummary(): Promise<PipelineSummary> {
-  const rows = await queryRows(
-    `MATCH (contact:Contact)-[:IN_STAGE]->(stage:PipelineStage)
-     RETURN stage.stage AS stage, count(contact) AS count`
-  );
-
-  const byStage = Object.fromEntries(
-    PIPELINE_STAGES.map((s) => [s, 0])
-  ) as Record<PipelineStage, number>;
+  const rows = result.records ?? [];
+  const companyMap = new Map<string, PipelineLead>();
 
   for (const row of rows) {
-    if (row.stage in byStage) {
-      byStage[row.stage as PipelineStage] = Number(row.count);
+    const r = row as any;
+    const name = r.companyName as string;
+
+    if (!companyMap.has(name)) {
+      companyMap.set(name, {
+        companyName: name,
+        companyDomain: r.companyDomain ?? undefined,
+        companySegment: r.companySegment ?? undefined,
+        companyDescription: r.companyDescription ?? undefined,
+        contacts: [],
+        currentStage: (r.currentStage ?? "New") as PipelineStage,
+        lastActivity: r.lastActivity ?? undefined,
+      });
+    }
+
+    const entry = companyMap.get(name)!;
+
+    const contactId = r.contactId as string;
+    if (!entry.contacts.some((c) => c.id === contactId)) {
+      entry.contacts.push({
+        id: contactId,
+        name: r.contactName ?? "Unknown",
+        email: r.contactEmail ?? undefined,
+        role: r.contactRole ?? undefined,
+        stage: (r.currentStage ?? "New") as PipelineStage,
+        enteredAt: r.enteredAt ?? new Date().toISOString(),
+      });
+    }
+
+    if (r.lastActivity && (!entry.lastActivity || r.lastActivity > entry.lastActivity)) {
+      entry.lastActivity = r.lastActivity;
     }
   }
 
-  const totalLeads = Object.values(byStage).reduce((a, b) => a + b, 0);
-  return { totalLeads, byStage };
+  return Array.from(companyMap.values());
 }
 
-export * from "./types.js";
+export async function getContactActivity(contactId: string): Promise<ActivityEntry[]> {
+  const result = await runQuery(
+    `MATCH (c:Contact {id: $contactId})-[:HAS_ACTIVITY]->(a:Activity)
+     RETURN a.id AS id, a.type AS type, a.note AS note, a.date AS date
+     ORDER BY a.date DESC`,
+    { contactId }
+  );
+
+  return (result.records ?? []).map((r: any) => ({
+    id: r.id as string,
+    type: r.type as string,
+    note: r.note as string,
+    date: r.date as string,
+  }));
+}

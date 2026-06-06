@@ -1,108 +1,122 @@
-// ============================================================
-// Pipeline CRM — Express Routes
-// Owner: Beyza (Task 15)
-// File: packages/server/src/routes/pipeline.ts
-// Mount in index.ts: app.use("/api/pipeline", pipelineRouter)
-// ============================================================
-
 import { Router, Request, Response } from "express";
 import {
-  startPipeline,
+  ensurePipelineStages,
   getPipelineLeads,
+  startPipeline,
   advanceStage,
-  addNote,
-  getActivity,
-  getPipelineSummary,
-  PipelineStage,
-  
+  regressStage,
+  addActivity,
+  getContactActivity,
+  STAGES,
 } from "../services/graph/pipeline/index.js";
 
 const router = Router();
 
-// ── POST /api/pipeline/start ─────────────────────────────────
-// Body: { companyName, contactName, email?, role? }
+let stagesEnsured = false;
+async function ensureStages() {
+  if (!stagesEnsured) {
+    await ensurePipelineStages();
+    stagesEnsured = true;
+  }
+}
+
+router.get("/stages", (_req: Request, res: Response) => {
+  res.json({ ok: true, data: { stages: STAGES } });
+});
+
+router.get("/leads", async (_req: Request, res: Response) => {
+  try {
+    await ensureStages();
+    const leads = await getPipelineLeads();
+    res.json({ ok: true, data: { leads } });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ ok: false, error: { code: "PIPELINE_LEADS_FAILED", message } });
+  }
+});
+
 router.post("/start", async (req: Request, res: Response) => {
   try {
-    const { companyName, contactName, email, role } = req.body;
-    if (!companyName || !contactName) {
-      return res.status(400).json({
+    await ensureStages();
+    const { companyName, contactName, contactEmail, contactRole } = req.body;
+
+    if (!companyName || typeof companyName !== "string") {
+      res.status(400).json({
         ok: false,
-        error: { code: "MISSING_FIELDS", message: "companyName and contactName are required" },
+        error: { code: "INVALID_INPUT", message: "companyName (string) is required" },
       });
+      return;
     }
-    const lead = await startPipeline({ companyName, contactName, email, role });
-    res.status(201).json({ ok: true, data: lead });
+
+    const result = await startPipeline(companyName, contactName, contactEmail, contactRole);
+    res.json({ ok: true, data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     res.status(500).json({ ok: false, error: { code: "PIPELINE_START_FAILED", message } });
   }
 });
 
-// ── GET /api/pipeline/leads ───────────────────────────────────
-router.get("/leads", async (_req: Request, res: Response) => {
+router.put("/:contactId/advance", async (req: Request, res: Response) => {
   try {
-    const leads = await getPipelineLeads();
-    res.json({ ok: true, data: leads });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ ok: false, error: { code: "PIPELINE_FETCH_FAILED", message } });
-  }
-});
-
-// ── GET /api/pipeline/summary ─────────────────────────────────
-router.get("/summary", async (_req: Request, res: Response) => {
-  try {
-    const summary = await getPipelineSummary();
-    res.json({ ok: true, data: summary });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ ok: false, error: { code: "PIPELINE_SUMMARY_FAILED", message } });
-  }
-});
-
-// ── PUT /api/pipeline/:id/advance ────────────────────────────
-// Body (optional): { stage: PipelineStage }
-router.put("/:id/advance", async (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-    const targetStage = req.body?.stage as PipelineStage | undefined;
-    const lead = await advanceStage(String(id), targetStage);  // ← String(id)
-    res.json({ ok: true, data: lead });
+    const contactId = req.params.contactId as string;
+    const result = await advanceStage(contactId);
+    res.json({ ok: true, data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     res.status(500).json({ ok: false, error: { code: "PIPELINE_ADVANCE_FAILED", message } });
   }
 });
 
-// ── POST /api/pipeline/:id/notes ─────────────────────────────
-// Body: { note, type? }
-router.post("/:id/notes", async (req: Request, res: Response) => {
+router.put("/:contactId/regress", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const { note, type } = req.body;
-    if (!note) {
-      return res.status(400).json({
+    const contactId = req.params.contactId as string;
+    const { stage } = req.body;
+
+    if (!stage || typeof stage !== "string") {
+      res.status(400).json({
         ok: false,
-        error: { code: "MISSING_FIELDS", message: "note is required" },
+        error: { code: "INVALID_INPUT", message: "stage (string) is required" },
       });
+      return;
     }
-    const activity = await addNote({ contactId: String(id), note, type });
-    res.status(201).json({ ok: true, data: activity });
+
+    const result = await regressStage(contactId, stage);
+    res.json({ ok: true, data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ ok: false, error: { code: "NOTE_ADD_FAILED", message } });
+    res.status(500).json({ ok: false, error: { code: "PIPELINE_REGRESS_FAILED", message } });
   }
 });
 
-// ── GET /api/pipeline/:id/activity ───────────────────────────
-router.get("/:id/activity", async (req: Request, res: Response) => {
+router.post("/:contactId/activity", async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const activity = await getActivity(String(id));
-    res.json({ ok: true, data: activity });
+    const contactId = req.params.contactId as string;
+    const { type, note } = req.body;
+
+    if (!type || !note || typeof type !== "string" || typeof note !== "string") {
+      res.status(400).json({
+        ok: false,
+        error: { code: "INVALID_INPUT", message: "type and note (strings) are required" },
+      });
+      return;
+    }
+
+    const result = await addActivity(contactId, type, note);
+    res.json({ ok: true, data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({ ok: false, error: { code: "ACTIVITY_FETCH_FAILED", message } });
+    res.status(500).json({ ok: false, error: { code: "PIPELINE_ACTIVITY_FAILED", message } });
+  }
+});
+
+router.get("/:contactId/activity", async (req: Request, res: Response) => {
+  try {
+    const contactId = req.params.contactId as string;
+    const activities = await getContactActivity(contactId);
+    res.json({ ok: true, data: { activities } });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ ok: false, error: { code: "PIPELINE_ACTIVITY_FAILED", message } });
   }
 });
 
