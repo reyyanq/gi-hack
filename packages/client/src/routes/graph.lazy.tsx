@@ -40,11 +40,11 @@ function getLabelConfig(labels: string[]) {
 
 export function GraphPage() {
   const PRESET_QUERIES = [
-    { label: "Signal Landscape", query: "MATCH (c:Company)-[r:HAS_SIGNAL]->(s:Signal) RETURN c, r, s LIMIT 50" },
-    { label: "Lead Cross-Section", query: "MATCH (c:Company) WHERE c.segment = 'IVD' WITH c LIMIT 3 OPTIONAL MATCH (c)-[r1:HAS_SIGNAL]->(s:Signal) OPTIONAL MATCH (c)-[r2:DEVELOPS]->(a:Application) RETURN c, r1, s, r2, a" },
-    { label: "Pipeline Ecosystem", query: "MATCH (c:Company)<-[r1:CONTACT_AT]-(contact:Contact)-[r2:IN_STAGE]->(stage:PipelineStage) OPTIONAL MATCH (contact)-[r3:HAS_ACTIVITY]->(a:Activity) OPTIONAL MATCH (c)-[r4:HAS_SIGNAL]->(s:Signal) RETURN c, r1, contact, r2, stage, r3, a, r4, s LIMIT 50" },
-    { label: "Application Developers", query: "MATCH (c:Company)-[r1:DEVELOPS]->(a:Application) OPTIONAL MATCH (c)-[r2:HAS_SIGNAL]->(s:Signal) RETURN c, r1, a, r2, s LIMIT 40" },
-    { label: "Supplier Network", query: "MATCH (c:Company)-[r1:SUPPLIES]->(p:Product) OPTIONAL MATCH (c)-[r2:HAS_SIGNAL]->(s:Signal) OPTIONAL MATCH (a:Application)-[r3:USED_IN]->(p) RETURN c, r1, p, r2, s, r3, a" },
+    { label: "Signal-Rich Leads", query: "MATCH (c:Company)-[r:HAS_SIGNAL]->(s:Signal) WHERE NOT c.name CONTAINS 'Siemens' RETURN c, r, s LIMIT 50" },
+    { label: "Lead Cross-Section", query: "MATCH (c:Company) WHERE c.segment = 'IVD' AND NOT c.name CONTAINS 'Siemens' WITH c LIMIT 3 OPTIONAL MATCH (c)-[r1:HAS_SIGNAL]->(s:Signal) OPTIONAL MATCH (c)-[r2:DEVELOPS]->(a:Application) RETURN c, r1, s, r2, a" },
+    { label: "Pipeline Ecosystem", query: "MATCH (c:Company)<-[r1:CONTACT_AT]-(contact:Contact)-[r2:IN_STAGE]->(stage:PipelineStage) OPTIONAL MATCH (contact)-[r3:HAS_ACTIVITY]->(a:Activity) OPTIONAL MATCH (c)-[r4:HAS_SIGNAL]->(s:Signal) WHERE NOT c.name CONTAINS 'Siemens' RETURN c, r1, contact, r2, stage, r3, a, r4, s LIMIT 50" },
+    { label: "Application Developers", query: "MATCH (c:Company)-[r1:DEVELOPS]->(a:Application) WHERE NOT c.name CONTAINS 'Siemens' OPTIONAL MATCH (c)-[r2:HAS_SIGNAL]->(s:Signal) RETURN c, r1, a, r2, s LIMIT 40" },
+    { label: "Signal + Application Landscape", query: "MATCH (c:Company)-[r1:HAS_SIGNAL]->(s:Signal) WHERE NOT c.name CONTAINS 'Siemens' WITH c, s, r1 LIMIT 30 OPTIONAL MATCH (c)-[r2:DEVELOPS]->(a:Application) RETURN c, r1, s, r2, a" },
   ];
 
   const defaultQuery = PRESET_QUERIES[0].query;
