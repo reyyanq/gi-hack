@@ -7,6 +7,7 @@ import {
   useSeed,
   useIngest,
   useRunScoring,
+  getSourceDisplayName,
   type SourceInfo,
 } from "../lib/graph";
 
@@ -40,7 +41,7 @@ function SourceCard({ source, onRun, isRunning }: {
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
         <div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#e0e0e0" }}>{source.name}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#e0e0e0" }}>{getSourceDisplayName(source.name)}</div>
           <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
             Weight: <span style={{ color: "#aaa" }}>{source.weight}</span>
           </div>

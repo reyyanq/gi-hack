@@ -99,13 +99,43 @@ export function useScores() {
   });
 }
 
+const SOURCE_DISPLAY_NAMES: Record<string, string> = {
+  'fda-510k': 'FDA 510(k)',
+  'clinical-trials': 'ClinicalTrials.gov',
+  'openalex': 'OpenAlex',
+  'epatent': 'EPO Patents',
+  'drks': 'DRKS (DE)',
+  'medica': 'MEDICA Conference',
+  'foekat': 'BMBF FÖKAT (DE)',
+  'github': 'GitHub',
+  'patent': 'Patent Stub',
+  'hiring': 'Hiring Stub',
+  'conference': 'Conference Stub',
+  'funding': 'Funding Stub',
+};
+
+export function getSourceDisplayName(id: string): string {
+  return SOURCE_DISPLAY_NAMES[id] ?? id.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
 /** Returns the list of registered source adapters. */
 export function useSources() {
   return useQuery<SourceInfo[]>({
     queryKey: queryKeys.sources,
     queryFn: async () => {
-      const res = await fetchJson<{ data: { sources: SourceInfo[] } }>("/graph/ingest/sources");
-      return res.data.sources;
+      const res = await fetchJson<{ data: { sources: string[]; health: { id: string; healthy: boolean; error?: string }[] } }>("/graph/ingest/sources");
+      const names = res.data.sources;
+      const healthMap = new Map(res.data.health.map(h => [h.id, h]));
+      return names.map((name) => {
+        const h = healthMap.get(name);
+        return {
+          name,
+          weight: 1,
+          status: !h ? "idle" as const : h.healthy ? "ok" as const : "error" as const,
+          lastRun: undefined,
+          recordsFetched: undefined,
+        };
+      });
     },
     staleTime: 1000 * 30,
   });
