@@ -1,10 +1,8 @@
 // ─── API Response ──────────────────────────────────────────────────────────
-
 export interface ApiSuccess<T> {
   ok: true;
   data: T;
 }
-
 export interface ApiError {
   ok: false;
   error: {
@@ -12,49 +10,62 @@ export interface ApiError {
     message: string;
   };
 }
-
 export type ApiResponse<T> = ApiSuccess<T> | ApiError;
 
-// ─── Graph Types ──────────────────────────────────────────────────────────
+// ─── Pipeline CRM Types ────────────────────────────────────────────────────
+export type PipelineStage =
+  | "New"
+  | "Contacted"
+  | "Meeting"
+  | "Proposal"
+  | "Closed Won"
+  | "Closed Lost";
 
-export interface GraphNode {
+export const PIPELINE_STAGES: PipelineStage[] = [
+  "New",
+  "Contacted",
+  "Meeting",
+  "Proposal",
+  "Closed Won",
+  "Closed Lost",
+];
+
+export interface ActivityNote {
   id: string;
-  labels: string[];
-  properties: Record<string, unknown>;
+  type: "NOTE" | "EMAIL" | "CALL" | "MEETING" | "STAGE_CHANGE";
+  note: string;
+  date: string;
+  createdBy?: string;
 }
 
-export interface GraphRelationship {
+export interface PipelineLead {
   id: string;
-  type: string;
-  startNodeId: string;
-  endNodeId: string;
-  properties: Record<string, unknown>;
+  contactName: string;
+  email?: string;
+  role?: string;
+  companyName: string;
+  companyDomain?: string;
+  companyTier?: "HOT" | "WARM" | "COLD";
+  companyScore?: number;
+  stage: PipelineStage;
+  stageEnteredAt: string;
+  notes: ActivityNote[];
 }
 
-export interface GraphQueryResult {
-  nodes: GraphNode[];
-  relationships: GraphRelationship[];
+export interface StartPipelineInput {
+  companyName: string;
+  contactName: string;
+  email?: string;
+  role?: string;
 }
 
-// ─── AI Types ─────────────────────────────────────────────────────────────
-
-export interface AIRequest {
-  prompt: string;
-  context?: string;
+export interface AddNoteInput {
+  contactId: string;
+  note: string;
+  type?: ActivityNote["type"];
 }
 
-export interface AIStreamChunk {
-  type: "text" | "error" | "done";
-  content: string;
-}
-
-// ─── Health Check ─────────────────────────────────────────────────────────
-
-export interface HealthStatus {
-  status: "ok" | "degraded";
-  services: {
-    neo4j: "connected" | "disconnected";
-    ai: "configured" | "missing_key";
-  };
-  uptime: number;
+export interface PipelineSummary {
+  totalLeads: number;
+  byStage: Record<PipelineStage, number>;
 }
