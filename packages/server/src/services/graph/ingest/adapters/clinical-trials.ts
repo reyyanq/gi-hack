@@ -43,7 +43,7 @@ async function fetchBatch(term: string): Promise<CTStudy[]> {
   const statuses = "RECRUITING,ACTIVE_NOT_RECRUITING,ENROLLING_BY_INVITATION,NOT_YET_RECRUITING";
   let url = `${CT_API}?query.term=${encodeURIComponent(term)}&filter.overallStatus=${statuses}&pageSize=100&format=json`;
 
-  for (let page = 0; page < 3; page++) {
+  for (let page = 0; page < 5; page++) {
     try {
       const res = await fetch(url, {
         headers: { "User-Agent": "LeadGraph/1.0" },
@@ -151,7 +151,6 @@ export class ClinicalTrialsAdapter implements SourceAdapter {
     return {
       sourceId: raw.sourceId,
       companyName,
-      domain: `${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
       description: `Clinical trial: ${briefTitle.slice(0, 150)}`,
       applicationAreas,
       signals,

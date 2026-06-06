@@ -57,7 +57,7 @@ export class GitHubSourceAdapter implements SourceAdapter {
 
     for (const keyword of DIAGNOSTIC_KEYWORDS) {
       const results = await this.ghFetch(
-        `/search/repositories?q=${keyword}+in:name,description,topics&sort=updated&per_page=10`
+        `/search/repositories?q=${keyword}+in:name,description,topics&sort=updated&per_page=50`
       );
       if (!results?.items) continue;
 
@@ -74,7 +74,7 @@ export class GitHubSourceAdapter implements SourceAdapter {
         } catch { /* use default */ }
 
         const repoTopics: string[] = repo.topics ?? [];
-        const allRepos = await this.ghFetch(`/orgs/${owner.login}/repos?per_page=5&sort=updated`);
+        const allRepos = await this.ghFetch(`/orgs/${owner.login}/repos?per_page=50&sort=updated`);
         const repoList: string[] = [];
         const allTopics = new Set(repoTopics);
         if (Array.isArray(allRepos)) {
@@ -124,7 +124,6 @@ export class GitHubSourceAdapter implements SourceAdapter {
     return {
       sourceId: raw.sourceId,
       companyName: login,
-      domain: `${login.toLowerCase()}.com`,
       description,
       applicationAreas: applications,
       signals,

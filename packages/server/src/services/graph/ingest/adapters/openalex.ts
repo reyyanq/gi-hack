@@ -50,7 +50,7 @@ async function fetchBatch(query: string): Promise<OAWork[]> {
   const encodedQuery = encodeURIComponent(query);
   let url = `${OA_API}?search=${encodedQuery}&filter=${filter}&per_page=100&sort=publication_date:desc`;
 
-  for (let page = 0; page < 3; page++) {
+  for (let page = 0; page < 10; page++) {
     try {
       const res = await fetch(url, {
         headers: {
@@ -172,7 +172,6 @@ export class OpenAlexAdapter implements SourceAdapter {
     return {
       sourceId: raw.sourceId,
       companyName,
-      domain: `${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
       description: `Research publication: ${title.slice(0, 120)}`,
       applicationAreas: appAreas,
       signals,
