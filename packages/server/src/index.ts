@@ -13,6 +13,21 @@ app.use(express.json());
 
 app.use("/api", apiRouter);
 
+// Direct preference form submit route (POST to the URL shown in the email)
+app.post("/preferences/:contactId/:token", async (req, res) => {
+  try {
+    const apiRes = await fetch(`http://localhost:${PORT}/api/agents/preferences/submit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contactId: req.params.contactId, token: req.params.token, ...req.body }),
+    });
+    const data = await apiRes.json();
+    return res.status(apiRes.status).json(data);
+  } catch (err: any) {
+    return res.status(500).json({ ok: false, error: { code: "FORWARD_FAILED", message: err.message } });
+  }
+});
+
 async function start() {
   const neo4jUri = process.env.NEO4J_URI ?? "bolt://localhost:7687";
   const neo4jUser = process.env.NEO4J_USER ?? "neo4j";

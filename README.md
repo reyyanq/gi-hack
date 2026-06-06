@@ -19,17 +19,20 @@ A ready-to-hack boilerplate for the **StartMiUp Hackathon – AI for Mittelhesse
 # 1. Start Neo4j
 docker compose up -d neo4j
 
-# 2. Load pre-built lead data (optional, skip for empty DB)
-docker compose --profile bootstrap run bootstrap
-
-# 3. Configure environment
+# 2. Configure environment
 cp .env.example .env
 # Edit .env — add your OPENAI_API_KEY (optional, for AI features)
 
-# 4. Install dependencies
+# 3. Install dependencies
 npm install
 
-# 5. Start development
+# 4. Build server (required for demo script)
+npm -w packages/server run build
+
+# 5. Load demo pipeline data
+npm run demo:pipeline
+
+# 6. Start development
 npm run dev
 ```
 
@@ -38,6 +41,7 @@ Open **http://localhost:5173** — client on :5173, server on :3001, Neo4j Brows
 **Database Options:**
 | Option | Command | What you get |
 |--------|---------|-------------|
+| **Demo Pipeline** | `npm run demo:pipeline` | 10 demo CRM leads across all pipeline stages (57 activities) |
 | **Bootstrap** (fastest) | `docker compose --profile bootstrap run bootstrap` | 1,300 companies, 1,800 signals, scored leads |
 | **Live ingest** | `npm run ingest:seed` | Fresh data from 8 real API sources |
 | **Empty** | Start without step 2 | Base ontology via `/api/graph/seed` |

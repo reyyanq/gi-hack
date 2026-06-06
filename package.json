@@ -10,7 +10,14 @@
     "dev:server": "npm -w packages/server run dev",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
-    "lint": "npm run lint --workspaces",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/api",
+    "test:e2e": "playwright test",
     "db:export": "npm -w packages/server run db:export",
     "db:bootstrap": "npm -w packages/server run db:bootstrap",
     "demo:pipeline": "ts-node packages/server/src/scripts/create-demo-pipeline.ts"
@@ -18,8 +25,16 @@
   "devDependencies": {
     "@playwright/test": "^1.60.0",
     "@types/node": "^25.9.2",
+    "@typescript-eslint/eslint-plugin": "^8.60.1",
+    "@typescript-eslint/parser": "^8.60.1",
+    "@vitest/ui": "^4.1.8",
     "concurrently": "^9.1.2",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react": "^7.37.5",
     "playwright": "^1.60.0",
-    "typescript": "^5.8.3"
+    "supertest": "^7.2.2",
+    "typescript": "^5.8.3",
+    "vitest": "^4.1.8"
   }
 }

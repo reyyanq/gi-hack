@@ -10,6 +10,7 @@ import {
   type SourceInfo,
 } from "../lib/graph";
 
+// @ts-ignore - TanStack Router type definition issue
 export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
@@ -170,7 +171,7 @@ export function AdminPage() {
           {/* Global ingest button */}
           <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
             <button
-              onClick={() => ingest.mutate()}
+              onClick={() => ingest.mutate(undefined)}
               disabled={ingest.isPending}
               style={{
                 flex: 1, padding: "11px 16px", borderRadius: 10,

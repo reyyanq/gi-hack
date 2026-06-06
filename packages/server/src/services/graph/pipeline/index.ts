@@ -44,12 +44,8 @@ export async function startPipeline(companyName: string, contactName?: string, c
     `MATCH (c:Company)
      WHERE c.name = $companyName OR c.normalizedName = $normName
      WITH c LIMIT 1
-     MERGE (contact:Contact {
-       id: randomUUID(),
-       name: $contactName,
-       email: $email,
-       role: $role
-     })
+     MERGE (contact:Contact {email: $email})
+     ON CREATE SET contact.id = randomUUID(), contact.name = $contactName, contact.role = $role
      MERGE (contact)-[:CONTACT_AT]->(c)
      WITH contact
      MATCH (s:PipelineStage {name: "New"})
@@ -60,7 +56,7 @@ export async function startPipeline(companyName: string, contactName?: string, c
       companyName,
       normName: companyName.toLowerCase().replace(/[^a-z0-9]/g, ""),
       contactName: contactName ?? `Contact at ${companyName}`,
-      email: contactEmail ?? null,
+      email: contactEmail ?? `${contactName}@${companyName.toLowerCase().replace(/[^a-z0-9]/g, "")}.com`,
       role: contactRole ?? null,
     }
   );

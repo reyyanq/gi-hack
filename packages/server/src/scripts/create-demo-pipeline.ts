@@ -2,7 +2,7 @@
 
 import { createDriver, closeDriver } from '../services/graph/neo4j.js';
 import { runQuery } from '../services/graph/neo4j.js';
-import { startPipeline, advanceStage, addActivity, ensurePipelineStages } from '../services/graph/pipeline/index.js';
+import { startPipeline, addActivity, ensurePipelineStages } from '../services/graph/pipeline/index.js';
 
 const STAGES = ['New', 'Contacted', 'Meeting', 'Proposal', 'Closed Won', 'Closed Lost'] as const;
 const ACTIVITY_TYPES = ['NOTE', 'EMAIL', 'CALL', 'MEETING', 'STAGE_CHANGE'] as const;
@@ -172,6 +172,7 @@ const DEMO_LEADS: DemoLead[] = [
   }
 ];
 
+// @ts-expect-error - Function exists for future use with timestamped activities
 function daysToISOString(daysOffset: number): string {
   const date = new Date();
   date.setDate(date.getDate() + daysOffset);

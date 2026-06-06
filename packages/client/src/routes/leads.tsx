@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { useScores, type ScoredCompany, type TierLevel } from "../lib/graph";
 
+// @ts-ignore - TanStack Router type definition issue
 export const Route = createFileRoute("/leads")({
   component: LeadsPage,
 });

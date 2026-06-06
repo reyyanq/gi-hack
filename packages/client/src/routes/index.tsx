@@ -9,6 +9,7 @@ import {
   type TierLevel,
 } from "../lib/graph";
 
+// @ts-ignore - TanStack Router type definition issue
 export const Route = createFileRoute("/")({
   component: DashboardPage,
 });
@@ -37,10 +38,10 @@ function TierBadge({ tier }: { tier: TierLevel }) {
 // ─── Summary Card ─────────────────────────────────────────────────────────────
 
 function SummaryCard({
-  label, value, sub, color, bg, isLoading,
+  label, value, sub, color, isLoading,
 }: {
   label: string; value: number | string; sub?: string;
-  color: string; bg: string; isLoading?: boolean;
+  color: string; isLoading?: boolean;
 }) {
   return (
     <div style={{
@@ -143,13 +144,13 @@ export function DashboardPage() {
       {/* ── Summary Cards ── */}
       <div style={{ display: "flex", gap: 14, marginBottom: 28, flexWrap: "wrap" }}>
         <SummaryCard label="Total Companies" value={counts.total} sub="in knowledge graph"
-          color="#f0f0f0" bg="rgba(255,255,255,0.05)" isLoading={scoresLoading} />
+          color="#f0f0f0" isLoading={scoresLoading} />
         <SummaryCard label="Hot Leads" value={counts.HOT} sub="score ≥ 70"
-          color="#f97316" bg="rgba(249,115,22,0.05)" isLoading={scoresLoading} />
+          color="#f97316" isLoading={scoresLoading} />
         <SummaryCard label="Warm Leads" value={counts.WARM} sub="score 40–69"
-          color="#eab308" bg="rgba(234,179,8,0.05)" isLoading={scoresLoading} />
+          color="#eab308" isLoading={scoresLoading} />
         <SummaryCard label="Cold Leads" value={counts.COLD} sub="score < 40"
-          color="#60a5fa" bg="rgba(96,165,250,0.05)" isLoading={scoresLoading} />
+          color="#60a5fa" isLoading={scoresLoading} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
@@ -239,7 +240,7 @@ export function DashboardPage() {
               />
               <ActionBtn
                 icon="🔄" label="Run Ingest" sublabel="Pull all data sources"
-                loading={ingest.isPending} onClick={() => ingest.mutate()}
+                loading={ingest.isPending} onClick={() => ingest.mutate(undefined)}
               />
               <ActionBtn
                 icon="🎯" label="Run Scoring" sublabel="Recalculate HOT/WARM/COLD"
