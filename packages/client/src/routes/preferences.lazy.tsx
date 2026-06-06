@@ -1,9 +1,9 @@
-import { createRoute } from '@tanstack/react-router';
+import { useParams } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { apiPost } from '../lib/api';
 
 export function PreferenceFormPage() {
-  const params = PreferenceFormPage.useParams();
+  const params = useParams({ from: "/preferences/$contactId/$token" });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -294,8 +294,4 @@ export function PreferenceFormPage() {
   );
 }
 
-export const route = createRoute({
-  getParentRoute: () => PreferenceFormRoute,
-  path: '/$contactId/$token',
-  component: PreferenceFormPage,
-});
+

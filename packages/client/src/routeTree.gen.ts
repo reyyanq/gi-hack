@@ -6,6 +6,7 @@ import { LeadsPage } from "./routes/leads";
 import { GraphPage } from "./routes/graph.lazy";
 import { ChatPage } from "./routes/chat.lazy";
 import { PipelinePage } from "./routes/pipeline.lazy";
+import { PreferenceFormPage } from "./routes/preferences.lazy";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -47,7 +48,13 @@ const pipelineRoute = createRoute({
   component: PipelinePage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, adminRoute, leadsRoute, graphRoute, chatRoute, pipelineRoute]);
+const preferencesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/preferences/$contactId/$token",
+  component: PreferenceFormPage,
+});
+
+const routeTree = rootRoute.addChildren([indexRoute, adminRoute, leadsRoute, graphRoute, chatRoute, pipelineRoute, preferencesRoute]);
 
 export const router = createRouter({ routeTree });
 
