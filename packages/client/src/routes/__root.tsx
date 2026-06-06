@@ -85,37 +85,35 @@ function StatusDot() {
 
 export function RootLayout() {
   return (
-    <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", backgroundColor: "#0f1117" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", backgroundColor: "#0f1117" }}>
 
-      {/* ── Sidebar ── */}
-      <aside style={{
-        width: 220,
-        flexShrink: 0,
+      <header style={{
+        height: 64,
         backgroundColor: "#161b27",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
         display: "flex",
-        flexDirection: "column",
-        padding: "0 0 24px",
+        alignItems: "center",
+        padding: "0 32px",
+        flexShrink: 0,
+        gap: "48px",
       }}>
 
         {/* Logo */}
-        <div style={{ padding: "28px 24px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0,
-            }}>L</div>
-            <div>
-              <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", letterSpacing: "-0.2px" }}>LeadGraph</div>
-              <div style={{ fontSize: 10, color: "#666", marginTop: 1 }}>Siemens Healthineers</div>
-            </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 700, color: "#fff", flexShrink: 0,
+          }}>L</div>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#f0f0f0", letterSpacing: "-0.2px" }}>LeadGraph</div>
+            <div style={{ fontSize: 10, color: "#666", marginTop: 1 }}>Siemens Healthineers</div>
           </div>
         </div>
 
-        {/* Nav Links */}
-        <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+         {/* Nav Links */}
+        <nav style={{ display: "flex", alignItems: "center", gap: "2px" }}>
           {navItems.map((item) => (
             <Link
               key={item.to}
@@ -124,17 +122,17 @@ export function RootLayout() {
               activeProps={{ style: { textDecoration: "none" } }}
             >
               {({ isActive }) => (
-                <div style={{
+                 <div style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 10,
-                  padding: "9px 12px",
+                  gap: 8,
+                  padding: "10px 16px",
                   borderRadius: 8,
                   fontSize: 13,
                   fontWeight: isActive ? 600 : 400,
                   color: isActive ? "#fff" : "#8a8f9e",
                   backgroundColor: isActive ? "rgba(99,102,241,0.15)" : "transparent",
-                  borderLeft: isActive ? "2px solid #6366f1" : "2px solid transparent",
+                  border: isActive ? "1px solid rgba(99,102,241,0.25)" : "1px solid transparent",
                   transition: "all 0.15s ease",
                   cursor: "pointer",
                 }}>
@@ -146,24 +144,22 @@ export function RootLayout() {
           ))}
         </nav>
 
-        {/* Bottom Status */}
-        <div style={{ padding: "0 16px" }}>
-          <div style={{
-            padding: "10px 12px",
-            borderRadius: 8,
-            backgroundColor: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}>
-            <StatusDot />
-            <span style={{ fontSize: 11, color: "#888" }}>Neo4j</span>
-          </div>
+         {/* Status */}
+        <div style={{
+          padding: "10px 16px",
+          borderRadius: 8,
+          backgroundColor: "rgba(255,255,255,0.03)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          flexShrink: 0,
+        }}>
+          <StatusDot />
+          <span style={{ fontSize: 11, color: "#888" }}>Neo4j</span>
         </div>
-      </aside>
+      </header>
 
-      {/* ── Main Content ── */}
       <main style={{ flex: 1, overflow: "auto", backgroundColor: "#0f1117" }}>
         <Outlet />
       </main>
