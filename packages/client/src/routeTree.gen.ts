@@ -1,10 +1,8 @@
-import {
-  createRootRoute,
-  createRoute,
-  createRouter,
-} from "@tanstack/react-router";
+import { createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
 import { RootLayout } from "./routes/__root";
-import { HomePage } from "./routes/index";
+import { DashboardPage } from "./routes/index";
+import { AdminPage } from "./routes/admin";
+import { LeadsPage } from "./routes/leads";
 import { GraphPage } from "./routes/graph.lazy";
 import { ChatPage } from "./routes/chat.lazy";
 
@@ -15,7 +13,19 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
-  component: HomePage,
+  component: DashboardPage,
+});
+
+const adminRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/admin",
+  component: AdminPage,
+});
+
+const leadsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/leads",
+  component: LeadsPage,
 });
 
 const graphRoute = createRoute({
@@ -30,7 +40,7 @@ const chatRoute = createRoute({
   component: ChatPage,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, graphRoute, chatRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, adminRoute, leadsRoute, graphRoute, chatRoute]);
 
 export const router = createRouter({ routeTree });
 
