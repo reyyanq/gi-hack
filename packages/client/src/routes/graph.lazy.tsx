@@ -38,6 +38,13 @@ function getLabelConfig(labels: string[]) {
   return DEFAULT_LABEL_CONFIG;
 }
 
+function neo4jId(obj: unknown): string {
+  if (!obj || typeof obj !== "object") return String(obj);
+  const o = obj as Record<string, unknown>;
+  if (typeof o.low === "number" && typeof o.high === "number") return String(o.low);
+  return String(obj);
+}
+
 export function GraphPage() {
   const PRESET_QUERIES = [
     { label: "Signal-Rich Leads", query: "MATCH (c:Company)-[r:HAS_SIGNAL]->(s:Signal) WHERE NOT c.name CONTAINS 'Siemens' RETURN c, r, s LIMIT 50" },
@@ -76,7 +83,7 @@ export function GraphPage() {
         const obj = value as Record<string, unknown>;
 
         if (obj.labels && obj.identity != null) {
-          const id = String(obj.identity);
+          const id = neo4jId(obj.identity);
           if (!nodes.has(id)) {
             const labels = (obj.labels as string[]) || [];
             const props = (obj.properties || {}) as Record<string, unknown>;
@@ -92,8 +99,8 @@ export function GraphPage() {
 
         if (obj.type && obj.start != null && obj.end != null) {
           edges.push({
-            source: String(obj.start),
-            target: String(obj.end),
+            source: neo4jId(obj.start),
+            target: neo4jId(obj.end),
             label: String(obj.type),
           });
         }
