@@ -2,9 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   useTierCounts,
   useTopLeads,
-  useSeed,
-  useIngest,
-  useRunScoring,
   useGraphStats,
   type TierLevel,
 } from "../lib/graph";
@@ -82,40 +79,6 @@ function ScoreBar({ score, tier }: { score: number; tier: TierLevel }) {
   );
 }
 
-// ─── Action Button ────────────────────────────────────────────────────────────
-
-function ActionBtn({
-  onClick, loading, label, sublabel, icon,
-}: {
-  onClick: () => void; loading: boolean; label: string; sublabel: string; icon: string;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      style={{
-        flex: 1,
-        backgroundColor: loading ? "rgba(99,102,241,0.1)" : "rgba(99,102,241,0.15)",
-        border: "1px solid rgba(99,102,241,0.3)",
-        borderRadius: 10,
-        padding: "14px 16px",
-        cursor: loading ? "not-allowed" : "pointer",
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        transition: "all 0.15s",
-        opacity: loading ? 0.6 : 1,
-      }}
-    >
-      <span style={{ fontSize: 22 }}>{loading ? "⏳" : icon}</span>
-      <div style={{ textAlign: "left" }}>
-        <div style={{ fontSize: 13, fontWeight: 600, color: "#c7d2fe" }}>{loading ? "Running…" : label}</div>
-        <div style={{ fontSize: 11, color: "#6366f1", marginTop: 2 }}>{sublabel}</div>
-      </div>
-    </button>
-  );
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function DashboardPage() {
@@ -123,10 +86,6 @@ export function DashboardPage() {
   const { counts, isLoading: scoresLoading } = useTierCounts();
   const { leads: topLeads, isLoading: leadsLoading } = useTopLeads(5);
   const { data: stats } = useGraphStats();
-
-  const seed = useSeed();
-  const ingest = useIngest();
-  const score = useRunScoring();
 
   return (
     <div style={{ padding: "32px 36px", maxWidth: 1100, margin: "0 auto" }}>
@@ -184,7 +143,7 @@ export function DashboardPage() {
             </div>
           ) : topLeads.length === 0 ? (
             <div style={{ padding: 32, textAlign: "center", color: "#777", fontSize: 13 }}>
-              No leads yet. Run ingest to populate.
+              No leads yet. <Link to="/admin" style={{ color: "#6366f1", textDecoration: "underline" }}>Go to Admin</Link> to seed data.
             </div>
           ) : (
             <div style={{ padding: "8px 0" }}>
@@ -225,40 +184,6 @@ export function DashboardPage() {
         {/* ── Right Column ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
-          {/* Quick Actions */}
-          <div style={{
-            backgroundColor: "#161b27",
-            border: "1px solid rgba(255,255,255,0.07)",
-            borderRadius: 14,
-            padding: "16px 18px",
-          }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#f0f0f0", marginBottom: 14 }}>Quick Actions</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <ActionBtn
-                icon="🌱" label="Seed Ontology" sublabel="Load base data & products"
-                loading={seed.isPending} onClick={() => seed.mutate()}
-              />
-              <ActionBtn
-                icon="🔄" label="Run Ingest" sublabel="Pull all data sources"
-                loading={ingest.isPending} onClick={() => ingest.mutate(undefined)}
-              />
-              <ActionBtn
-                icon="🎯" label="Run Scoring" sublabel="Recalculate HOT/WARM/COLD"
-                loading={score.isPending} onClick={() => score.mutate()}
-              />
-            </div>
-            {(seed.isSuccess || ingest.isSuccess || score.isSuccess) && (
-              <div style={{ marginTop: 12, fontSize: 11, color: "#86efac", padding: "8px 12px", backgroundColor: "rgba(34,197,94,0.1)", borderRadius: 8, border: "1px solid rgba(34,197,94,0.2)" }}>
-                ✓ Operation completed successfully
-              </div>
-            )}
-            {(seed.isError || ingest.isError || score.isError) && (
-              <div style={{ marginTop: 12, fontSize: 11, color: "#fca5a5", padding: "8px 12px", backgroundColor: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid rgba(239,68,68,0.15)" }}>
-                ✗ Error — check console
-              </div>
-            )}
-          </div>
-
           {/* Graph Stats */}
           <div style={{
             backgroundColor: "#161b27",
@@ -283,6 +208,9 @@ export function DashboardPage() {
                 <span style={{ color: "#ccc", fontWeight: 600 }}>{value}</span>
               </div>
             ))}
+            <div style={{ marginTop: 12, fontSize: 11, color: "#777", fontStyle: "italic" }}>
+              → Go to <Link to="/admin" style={{ color: "#6366f1", textDecoration: "underline" }}>Admin</Link> for ingest and scoring controls
+            </div>
           </div>
 
         </div>

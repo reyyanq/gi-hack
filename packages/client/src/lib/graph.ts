@@ -22,6 +22,13 @@ export interface Signal {
   url?: string;
 }
 
+export interface ContactInfo {
+  id: string;
+  name: string;
+  email?: string;
+  role?: string;
+}
+
 export interface ScoredCompany {
   id: string;
   name: string;
@@ -34,6 +41,7 @@ export interface ScoredCompany {
   outreachHook?: string;
   signals: Signal[];
   applications?: string[];
+  contacts?: ContactInfo[];
 }
 
 export interface SourceInfo {
@@ -92,8 +100,32 @@ export function useScores() {
   return useQuery<ScoredCompany[]>({
     queryKey: queryKeys.scores,
     queryFn: async () => {
-      const res = await fetchJson<{ data: { companies: ScoredCompany[] } }>("/graph/score");
-      return res.data.companies;
+      const res = await fetchJson<{ data: { companies: any[] } }>("/graph/score");
+      return res.data.companies.map((c: any) => ({
+        id: c.companyName,
+        name: c.companyName,
+        domain: c.domain,
+        segment: c.segment,
+        region: c.region,
+        score: c.totalScore,
+        tier: c.tier,
+        breakdown: {
+          signal: c.breakdown.signalScore,
+          productFit: c.breakdown.productFitScore,
+          segment: c.breakdown.segmentBonus,
+          recency: c.breakdown.recencyBonus,
+          total: c.totalScore,
+        },
+        outreachHook: c.outreachHook,
+        signals: c.signals.map((s: any) => ({
+          type: s.type,
+          date: s.date,
+          confidence: s.confidence,
+          description: s.description,
+        })),
+        applications: c.applications,
+        contacts: c.contacts,
+      }));
     },
     staleTime: 1000 * 60 * 2,
   });

@@ -358,13 +358,16 @@ export function LeadsPage() {
         {/* Table header */}
         <div style={{
           display: "grid",
-          gridTemplateColumns: "2fr 100px 100px 140px 180px",
+          gridTemplateColumns: "200px 180px 140px 80px 80px 140px 1fr",
           padding: "10px 20px",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
           fontSize: 11, fontWeight: 700, color: "#777",
           letterSpacing: "0.6px", textTransform: "uppercase",
+          alignItems: "center",
         }}>
           <span>Company</span>
+          <span>Contact</span>
+          <span>Role / Email</span>
           <span>Tier</span>
           <span>Score</span>
           <span>Segment</span>
@@ -383,55 +386,136 @@ export function LeadsPage() {
             No leads match your filters.
           </div>
         ) : (
-          filtered.map((company, i) => (
-            <div
-              key={company.id}
-              onClick={() => setSelected(company)}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "2fr 100px 100px 140px 180px",
-                padding: "14px 20px",
-                borderBottom: i < filtered.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
-                cursor: "pointer",
-                transition: "background 0.1s",
-                alignItems: "center",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
-            >
-              {/* Company name */}
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#e0e0e0" }}>{company.name}</div>
-                <div style={{ fontSize: 11, color: "#777", marginTop: 2 }}>{company.domain ?? "—"}</div>
-              </div>
+          <>
+            {filtered.map((company) => {
+              const contacts = company.contacts ?? [];
+              return (
+                <div key={company.id}>
+                  {contacts.length === 0 ? (
+                    <div
+                      onClick={() => setSelected(company)}
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "200px 180px 140px 80px 80px 140px 1fr",
+                        padding: "14px 20px",
+                        borderBottom: "1px solid rgba(255,255,255,0.04)",
+                        cursor: "pointer",
+                        transition: "background 0.1s",
+                        alignItems: "center",
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      {/* Company name */}
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 600, color: "#e0e0e0" }}>{company.name}</div>
+                        <div style={{ fontSize: 11, color: "#777", marginTop: 2 }}>{company.domain ?? "—"}</div>
+                      </div>
 
-              {/* Tier */}
-              <TierBadge tier={company.tier} />
+                      {/* No contact */}
+                      <span style={{ fontSize: 12, color: "#555", fontStyle: "italic" }}>No contact</span>
 
-              {/* Score bar */}
-              <ScoreBar score={company.score} tier={company.tier} />
+                      {/* Empty context */}
+                      <span></span>
 
-              {/* Segment */}
-              <span style={{ fontSize: 12, color: "#888" }}>{company.segment ?? "—"}</span>
+                      {/* Tier */}
+                      <TierBadge tier={company.tier} />
 
-              {/* Signal types */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {[...new Set(company.signals?.map((s) => s.type) ?? [])].slice(0, 3).map((type) => (
-                  <span key={type} style={{
-                    fontSize: 10, padding: "2px 7px", borderRadius: 10,
-                    backgroundColor: "rgba(99,102,241,0.1)",
-                    border: "1px solid rgba(99,102,241,0.2)",
-                    color: "#818cf8",
-                  }}>
-                    {type}
-                  </span>
-                ))}
-                {(company.signals?.length ?? 0) > 3 && (
-                  <span style={{ fontSize: 10, color: "#777" }}>+{company.signals.length - 3}</span>
-                )}
-              </div>
-            </div>
-          ))
+                      {/* Score bar */}
+                      <ScoreBar score={company.score} tier={company.tier} />
+
+                      {/* Segment */}
+                      <span style={{ fontSize: 12, color: "#888" }}>{company.segment ?? "—"}</span>
+
+                      {/* Signal types */}
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                        {[...new Set(company.signals?.map((s) => s.type) ?? [])].slice(0, 3).map((type) => (
+                          <span key={type} style={{
+                            fontSize: 10, padding: "2px 7px", borderRadius: 10,
+                            backgroundColor: "rgba(99,102,241,0.1)",
+                            border: "1px solid rgba(99,102,241,0.2)",
+                            color: "#818cf8",
+                          }}>
+                            {type}
+                          </span>
+                        ))}
+                        {(company.signals?.length ?? 0) > 3 && (
+                          <span style={{ fontSize: 10, color: "#777" }}>+{company.signals.length - 3}</span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    contacts.map((contact, ci) => (
+                      <div
+                        key={`${company.id}-${contact.id}`}
+                        onClick={() => setSelected(company)}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "200px 180px 140px 80px 80px 140px 1fr",
+                          padding: "14px 20px",
+                          cursor: "pointer",
+                          transition: "background 0.1s",
+                          alignItems: "center",
+                          backgroundColor: ci > 0 ? "rgba(255,255,255,0.01)" : "transparent",
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = ci > 0 ? "rgba(255,255,255,0.01)" : "transparent")}
+                      >
+                        {/* Company name - only show on first row */}
+                        {ci === 0 ? (
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: "#e0e0e0" }}>{company.name}</div>
+                            <div style={{ fontSize: 11, color: "#777", marginTop: 2 }}>{company.domain ?? "—"}</div>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: 13, color: "#777", fontStyle: "italic" }}>{company.name}</span>
+                        )}
+
+                        {/* Contact name */}
+                        <span style={{ fontSize: 12, color: "#ccc", fontWeight: 500 }}>{contact.name}</span>
+
+                        {/* Role / Email */}
+                        <div>
+                          <div style={{ fontSize: 11, color: "#aaa" }}>{contact.role ?? "—"}</div>
+                          <div style={{ fontSize: 10, color: "#777", marginTop: 1 }}>{contact.email ?? "—"}</div>
+                        </div>
+
+                        {/* Tier - only show on first row */}
+                        {ci === 0 && <TierBadge tier={company.tier} />}
+
+                        {/* Score bar - only show on first row */}
+                        {ci === 0 && <ScoreBar score={company.score} tier={company.tier} />}
+
+                        {/* Segment - only show on first row */}
+                        {ci === 0 && (
+                          <span style={{ fontSize: 12, color: "#888" }}>{company.segment ?? "—"}</span>
+                        )}
+
+                        {/* Signal types - only show on first row */}
+                        {ci === 0 && (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            {[...new Set(company.signals?.map((s) => s.type) ?? [])].slice(0, 3).map((type) => (
+                              <span key={type} style={{
+                                fontSize: 10, padding: "2px 7px", borderRadius: 10,
+                                backgroundColor: "rgba(99,102,241,0.1)",
+                                border: "1px solid rgba(99,102,241,0.2)",
+                                color: "#818cf8",
+                              }}>
+                                {type}
+                              </span>
+                            ))}
+                            {(company.signals?.length ?? 0) > 3 && (
+                              <span style={{ fontSize: 10, color: "#777" }}>+{company.signals.length - 3}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              );
+            })}
+          </>
         )}
       </div>
 

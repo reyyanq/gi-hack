@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useGraphQuery, useGraphSeed } from "../lib/graph";
+import { useGraphQuery } from "../lib/graph";
 
 interface GraphNode {
   id: string;
@@ -58,7 +58,6 @@ export function GraphPage() {
   const [cypher, setCypher] = useState(defaultQuery);
   const [selectedPreset, setSelectedPreset] = useState(PRESET_QUERIES[0].label);
   const query = useGraphQuery();
-  const seed = useGraphSeed();
   const [graphData, setGraphData] = useState<{ nodes: GraphNode[]; edges: GraphEdge[] } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -249,21 +248,6 @@ export function GraphPage() {
         >
           {query.isPending ? "Running..." : "Run"}
         </button>
-        <button
-          onClick={() => seed.mutate()}
-          disabled={seed.isPending}
-          style={{
-            padding: "10px 20px",
-            borderRadius: 8,
-            border: "1px solid rgba(34,197,94,0.3)",
-            backgroundColor: seed.isPending ? "rgba(34,197,94,0.04)" : "rgba(34,197,94,0.08)",
-            color: seed.isPending ? "#6b7280" : "#86efac",
-            fontSize: 13, fontWeight: 600,
-            cursor: seed.isPending ? "not-allowed" : "pointer",
-          }}
-        >
-          {seed.isPending ? "Seeding..." : "Seed Data"}
-        </button>
       </div>
 
       {query.isError && (
@@ -378,16 +362,6 @@ export function GraphPage() {
         }}>
           {JSON.stringify(query.data, null, 2)}
         </pre>
-      )}
-
-      {seed.isSuccess && (
-        <div style={{
-          marginTop: 16, padding: "10px 14px", borderRadius: 8, fontSize: 12,
-          color: "#86efac", backgroundColor: "rgba(34,197,94,0.1)",
-          border: "1px solid rgba(34,197,94,0.2)",
-        }}>
-          ✓ Seed completed
-        </div>
       )}
     </div>
   );

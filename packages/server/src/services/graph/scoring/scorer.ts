@@ -1,5 +1,5 @@
-import { queryRows } from "../neo4j.js";
-import { ScoredResult } from "./types.js";
+import { queryRows, runQuery } from "../neo4j.js";
+import { ScoredResult, ContactInfo } from "./types.js";
 
 const SEGMENT_BONUS: Record<string, number> = {
   IVD_MANUFACTURER: 20,
@@ -28,6 +28,7 @@ interface CompanyRow {
   name: string;
   domain: string | null;
   segment: string | null;
+  region: string | null;
   signals: SignalRow[];
   applications: string[];
 }
@@ -62,6 +63,37 @@ function generateHook(signals: SignalRow[]): string | undefined {
   }
 }
 
+async function fetchContactsForCompanies(companyNames: string[]): Promise<Map<string, ContactInfo[]>> {
+  if (companyNames.length === 0) return new Map();
+
+  const result = await runQuery(
+    `MATCH (c:Company)<-[:CONTACT_AT]-(contact:Contact)
+     WHERE c.name IN $companyNames
+     RETURN c.name AS companyName,
+            contact.id AS id,
+            contact.name AS name,
+            contact.email AS email,
+            contact.role AS role`,
+    { companyNames }
+  );
+
+  const contactMap = new Map<string, ContactInfo[]>();
+  for (const row of (result.records ?? [])) {
+    const r = row as any;
+    const companyName = r.companyName as string;
+    if (!contactMap.has(companyName)) {
+      contactMap.set(companyName, []);
+    }
+    contactMap.get(companyName)!.push({
+      id: r.id as string,
+      name: r.name as string,
+      email: r.email as string | undefined,
+      role: r.role as string | undefined,
+    });
+  }
+  return contactMap;
+}
+
 export async function scoreAll(): Promise<ScoredResult[]> {
   const result = await queryRows(
     `MATCH (c:Company)
@@ -74,6 +106,7 @@ export async function scoreAll(): Promise<ScoredResult[]> {
      RETURN c.name AS name,
             c.domain AS domain,
             c.segment AS segment,
+            c.region AS region,
             [sig IN collect(DISTINCT {type: s.type, date: s.date, confidence: s.confidence, description: s.description}) WHERE sig.type IS NOT NULL] AS signals,
             collect(DISTINCT a.name) AS applications
      ORDER BY c.name`
@@ -87,6 +120,10 @@ export async function scoreAll(): Promise<ScoredResult[]> {
      RETURN collect(DISTINCT a.name) AS apps`
   );
   const siemensApps: string[] = (siemensResult[0] as any)?.apps ?? [];
+
+  // Fetch all contacts for companies
+  const companyNames = rows.map(r => r.name);
+  const contactsMap = await fetchContactsForCompanies(companyNames);
 
   const scored: ScoredResult[] = [];
 
@@ -132,7 +169,20 @@ export async function scoreAll(): Promise<ScoredResult[]> {
 
     const outreachHook = disqualifiers.length === 0 && totalScore >= 40 ? generateHook(validSignals) : undefined;
 
-    scored.push({ companyName: row.name, tier, totalScore, breakdown, disqualifiers, outreachHook });
+    scored.push({
+      companyName: row.name,
+      domain: row.domain ?? undefined,
+      segment: row.segment ?? undefined,
+      region: row.region ?? undefined,
+      tier,
+      totalScore,
+      breakdown,
+      disqualifiers,
+      outreachHook,
+      contacts: contactsMap.get(row.name) ?? [],
+      signals: validSignals,
+      applications: row.applications,
+    });
   }
 
   scored.sort((a, b) => b.totalScore - a.totalScore);
