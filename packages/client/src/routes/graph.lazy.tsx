@@ -40,11 +40,11 @@ function getLabelConfig(labels: string[]) {
 
 export function GraphPage() {
   const PRESET_QUERIES = [
-    { label: "Signal-Rich Leads", query: "MATCH (c:Company)-[:HAS_SIGNAL]->(s:Signal) RETURN c, s LIMIT 40" },
-    { label: "IVD Lead Landscape", query: "MATCH (c:Company {segment: 'IVD'})-[:HAS_SIGNAL]->(s:Signal) RETURN c, s LIMIT 40" },
-    { label: "Pipeline + Activities", query: "MATCH (c:Company)<-[:CONTACT_AT]-(contact:Contact)-[:IN_STAGE]->(s:PipelineStage), (contact)-[:HAS_ACTIVITY]->(a:Activity) RETURN c, contact, s, a LIMIT 40" },
-    { label: "Lead Products", query: "MATCH (c:Company)-[:SUPPLIES]->(p:Product) RETURN c, p LIMIT 25" },
-    { label: "Signal + Applications", query: "MATCH (c:Company)-[:HAS_SIGNAL]->(s:Signal) OPTIONAL MATCH (c)-[:DEVELOPS]->(a:Application) RETURN c, s, a LIMIT 50" },
+    { label: "Signal Landscape", query: "MATCH (c:Company)-[r:HAS_SIGNAL]->(s:Signal) RETURN c, r, s LIMIT 50" },
+    { label: "Lead Cross-Section", query: "MATCH (c:Company) WHERE c.segment = 'IVD' WITH c LIMIT 3 OPTIONAL MATCH (c)-[r1:HAS_SIGNAL]->(s:Signal) OPTIONAL MATCH (c)-[r2:DEVELOPS]->(a:Application) RETURN c, r1, s, r2, a" },
+    { label: "Pipeline Ecosystem", query: "MATCH (c:Company)<-[r1:CONTACT_AT]-(contact:Contact)-[r2:IN_STAGE]->(stage:PipelineStage) OPTIONAL MATCH (contact)-[r3:HAS_ACTIVITY]->(a:Activity) OPTIONAL MATCH (c)-[r4:HAS_SIGNAL]->(s:Signal) RETURN c, r1, contact, r2, stage, r3, a, r4, s LIMIT 50" },
+    { label: "Application Developers", query: "MATCH (c:Company)-[r1:DEVELOPS]->(a:Application) OPTIONAL MATCH (c)-[r2:HAS_SIGNAL]->(s:Signal) RETURN c, r1, a, r2, s LIMIT 40" },
+    { label: "Supplier Network", query: "MATCH (c:Company)-[r1:SUPPLIES]->(p:Product) OPTIONAL MATCH (c)-[r2:HAS_SIGNAL]->(s:Signal) OPTIONAL MATCH (a:Application)-[r3:USED_IN]->(p) RETURN c, r1, p, r2, s, r3, a" },
   ];
 
   const defaultQuery = PRESET_QUERIES[0].query;
