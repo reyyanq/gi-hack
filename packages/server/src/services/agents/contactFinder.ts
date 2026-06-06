@@ -103,10 +103,7 @@ Return a JSON array of contacts. Each contact has: name (full name), role (speci
   }
 }
 
-// ─── Strategy 2: LinkedIn search (fallback — placeholder) ─────────────────────
-// TODO: Implement LinkedIn API/playwright scraping for contact discovery.
-//   Strategy: search company page → people tab → extract names/roles.
-//   Requires: LinkedIn session cookie or Proxycurl API key.
+// ─── Strategy 2: LinkedIn search (Playwright) ────────────────────────────────
 
 export class LinkedInStrategy implements ContactFinderStrategy {
   name = "linkedin";
