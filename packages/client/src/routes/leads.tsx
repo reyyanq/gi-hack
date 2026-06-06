@@ -88,7 +88,7 @@ function DetailDrawer({ company, onClose }: { company: ScoredCompany; onClose: (
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <h2 style={{ fontSize: 18, fontWeight: 700, color: "#f0f0f0", margin: 0 }}>{company.name}</h2>
-              <div style={{ fontSize: 12, color: "#555", marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: "#888", marginTop: 4 }}>
                 {company.domain ?? "—"} · {company.segment ?? "Unknown"} · {company.region ?? "—"}
               </div>
             </div>
@@ -111,7 +111,7 @@ function DetailDrawer({ company, onClose }: { company: ScoredCompany; onClose: (
 
           {/* Score Breakdown */}
           <section>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#777", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 12 }}>
               Score Breakdown
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -143,7 +143,7 @@ function DetailDrawer({ company, onClose }: { company: ScoredCompany; onClose: (
           {/* Outreach Hook */}
           {company.outreachHook && (
             <section>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#777", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 10 }}>
                 Outreach Hook
               </div>
               <div style={{
@@ -160,12 +160,12 @@ function DetailDrawer({ company, onClose }: { company: ScoredCompany; onClose: (
 
           {/* Signals Timeline */}
           <section>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#777", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 12 }}>
               Signals Timeline ({sortedSignals.length})
             </div>
 
             {sortedSignals.length === 0 ? (
-              <div style={{ fontSize: 13, color: "#444", padding: "12px 0" }}>No signals found.</div>
+              <div style={{ fontSize: 13, color: "#777", padding: "12px 0" }}>No signals found.</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                 {sortedSignals.map((signal, i) => (
@@ -187,11 +187,11 @@ function DetailDrawer({ company, onClose }: { company: ScoredCompany; onClose: (
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                         <span style={{ fontSize: 12, fontWeight: 600, color: "#ccc" }}>{signal.type}</span>
-                        <span style={{ fontSize: 11, color: "#444", flexShrink: 0 }}>
+                        <span style={{ fontSize: 11, color: "#777", flexShrink: 0 }}>
                           {signal.date ? new Date(signal.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                         </span>
                       </div>
-                      <p style={{ fontSize: 12, color: "#666", margin: "4px 0 0", lineHeight: 1.5 }}>
+                      <p style={{ fontSize: 12, color: "#999", margin: "4px 0 0", lineHeight: 1.5 }}>
                         {signal.description}
                       </p>
                       {signal.url && (
@@ -206,7 +206,7 @@ function DetailDrawer({ company, onClose }: { company: ScoredCompany; onClose: (
                       )}
                       {/* Confidence */}
                       <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                        <span style={{ fontSize: 10, color: "#444" }}>Confidence</span>
+                        <span style={{ fontSize: 10, color: "#777" }}>Confidence</span>
                         <div style={{ width: 50, height: 3, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.06)" }}>
                           <div style={{ width: `${signal.confidence * 100}%`, height: "100%", borderRadius: 2, backgroundColor: "#6366f1" }} />
                         </div>
@@ -222,7 +222,7 @@ function DetailDrawer({ company, onClose }: { company: ScoredCompany; onClose: (
           {/* Applications */}
           {company.applications && company.applications.length > 0 && (
             <section>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "#555", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#777", letterSpacing: "0.8px", textTransform: "uppercase", marginBottom: 10 }}>
                 Applications
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
@@ -287,7 +287,7 @@ export function LeadsPage() {
       {/* Header */}
       <div style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f0f0f0", margin: 0 }}>Lead Explorer</h1>
-        <p style={{ fontSize: 13, color: "#555", marginTop: 6 }}>
+        <p style={{ fontSize: 13, color: "#888", marginTop: 6 }}>
           {filtered.length} companies · sorted by score
         </p>
       </div>
@@ -324,7 +324,7 @@ export function LeadsPage() {
                 ? t === "ALL"
                   ? { backgroundColor: "rgba(255,255,255,0.12)", color: "#fff", borderColor: "rgba(255,255,255,0.2)" }
                   : { backgroundColor: tierConfig[t].bg, color: tierConfig[t].color, borderColor: tierConfig[t].border }
-                : { backgroundColor: "transparent", color: "#555", borderColor: "rgba(255,255,255,0.08)" }
+                  : { backgroundColor: "transparent", color: "#888", borderColor: "rgba(255,255,255,0.08)" }
               ),
             }}
           >
@@ -361,7 +361,7 @@ export function LeadsPage() {
           gridTemplateColumns: "2fr 100px 100px 140px 180px",
           padding: "10px 20px",
           borderBottom: "1px solid rgba(255,255,255,0.06)",
-          fontSize: 11, fontWeight: 700, color: "#444",
+          fontSize: 11, fontWeight: 700, color: "#777",
           letterSpacing: "0.6px", textTransform: "uppercase",
         }}>
           <span>Company</span>
@@ -379,7 +379,7 @@ export function LeadsPage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#444", fontSize: 14 }}>
+          <div style={{ padding: 40, textAlign: "center", color: "#777", fontSize: 14 }}>
             No leads match your filters.
           </div>
         ) : (
@@ -402,7 +402,7 @@ export function LeadsPage() {
               {/* Company name */}
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: "#e0e0e0" }}>{company.name}</div>
-                <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>{company.domain ?? "—"}</div>
+                <div style={{ fontSize: 11, color: "#777", marginTop: 2 }}>{company.domain ?? "—"}</div>
               </div>
 
               {/* Tier */}
@@ -412,7 +412,7 @@ export function LeadsPage() {
               <ScoreBar score={company.score} tier={company.tier} />
 
               {/* Segment */}
-              <span style={{ fontSize: 12, color: "#666" }}>{company.segment ?? "—"}</span>
+              <span style={{ fontSize: 12, color: "#888" }}>{company.segment ?? "—"}</span>
 
               {/* Signal types */}
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
@@ -427,7 +427,7 @@ export function LeadsPage() {
                   </span>
                 ))}
                 {(company.signals?.length ?? 0) > 3 && (
-                  <span style={{ fontSize: 10, color: "#444" }}>+{company.signals.length - 3}</span>
+                  <span style={{ fontSize: 10, color: "#777" }}>+{company.signals.length - 3}</span>
                 )}
               </div>
             </div>

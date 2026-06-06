@@ -54,13 +54,13 @@ function SummaryCard({
       gap: 6,
       flex: 1,
     }}>
-      <div style={{ fontSize: 12, color: "#666", fontWeight: 500, letterSpacing: "0.4px", textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: 12, color: "#888", fontWeight: 500, letterSpacing: "0.4px", textTransform: "uppercase" }}>{label}</div>
       {isLoading ? (
         <div style={{ height: 36, width: 60, borderRadius: 6, backgroundColor: "rgba(255,255,255,0.06)", animation: "pulse 1.5s ease-in-out infinite" }} />
       ) : (
         <div style={{ fontSize: 36, fontWeight: 700, color, lineHeight: 1 }}>{value}</div>
       )}
-      {sub && <div style={{ fontSize: 12, color: "#555" }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 12, color: "#888" }}>{sub}</div>}
     </div>
   );
 }
@@ -136,7 +136,7 @@ export function DashboardPage() {
         <h1 style={{ fontSize: 24, fontWeight: 700, color: "#f0f0f0", margin: 0 }}>
           Lead Intelligence Dashboard
         </h1>
-        <p style={{ fontSize: 13, color: "#555", marginTop: 6 }}>
+        <p style={{ fontSize: 13, color: "#888", marginTop: 6 }}>
           Siemens Healthineers · Biological Intermediates B2B Pipeline
         </p>
       </div>
@@ -183,7 +183,7 @@ export function DashboardPage() {
               ))}
             </div>
           ) : topLeads.length === 0 ? (
-            <div style={{ padding: 32, textAlign: "center", color: "#444", fontSize: 13 }}>
+            <div style={{ padding: 32, textAlign: "center", color: "#777", fontSize: 13 }}>
               No leads yet. Run ingest to populate.
             </div>
           ) : (
@@ -204,12 +204,12 @@ export function DashboardPage() {
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = "rgba(255,255,255,0.03)")}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
-                    <span style={{ fontSize: 13, color: "#444", fontWeight: 700, minWidth: 20 }}>#{i + 1}</span>
+                    <span style={{ fontSize: 13, color: "#777", fontWeight: 700, minWidth: 20 }}>#{i + 1}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: "#e0e0e0", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                         {company.name}
                       </div>
-                      <div style={{ fontSize: 11, color: "#555", marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: "#888", marginTop: 2 }}>
                         {company.segment ?? "Unknown segment"} · {company.signals?.length ?? 0} signals
                       </div>
                     </div>
@@ -248,12 +248,12 @@ export function DashboardPage() {
               />
             </div>
             {(seed.isSuccess || ingest.isSuccess || score.isSuccess) && (
-              <div style={{ marginTop: 12, fontSize: 11, color: "#22c55e", padding: "8px 12px", backgroundColor: "rgba(34,197,94,0.08)", borderRadius: 8 }}>
+              <div style={{ marginTop: 12, fontSize: 11, color: "#86efac", padding: "8px 12px", backgroundColor: "rgba(34,197,94,0.1)", borderRadius: 8, border: "1px solid rgba(34,197,94,0.2)" }}>
                 ✓ Operation completed successfully
               </div>
             )}
             {(seed.isError || ingest.isError || score.isError) && (
-              <div style={{ marginTop: 12, fontSize: 11, color: "#ef4444", padding: "8px 12px", backgroundColor: "rgba(239,68,68,0.08)", borderRadius: 8 }}>
+              <div style={{ marginTop: 12, fontSize: 11, color: "#fca5a5", padding: "8px 12px", backgroundColor: "rgba(239,68,68,0.08)", borderRadius: 8, border: "1px solid rgba(239,68,68,0.15)" }}>
                 ✗ Error — check console
               </div>
             )}
@@ -279,7 +279,7 @@ export function DashboardPage() {
                 borderBottom: "1px solid rgba(255,255,255,0.04)",
                 fontSize: 13,
               }}>
-                <span style={{ color: "#666" }}>{label}</span>
+                <span style={{ color: "#888" }}>{label}</span>
                 <span style={{ color: "#ccc", fontWeight: 600 }}>{value}</span>
               </div>
             ))}

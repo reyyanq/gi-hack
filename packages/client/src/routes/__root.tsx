@@ -158,7 +158,7 @@ export function RootLayout() {
             gap: 8,
           }}>
             <StatusDot />
-            <span style={{ fontSize: 11, color: "#666" }}>Neo4j</span>
+            <span style={{ fontSize: 11, color: "#888" }}>Neo4j</span>
           </div>
         </div>
       </aside>
