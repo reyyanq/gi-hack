@@ -1,53 +1,136 @@
-import { Router, Request, Response } from "express";
-import { askAI, isConfigured } from "../services/ai/llm.js";
-import { runQuery } from "../services/graph/neo4j.js";
+import { Router, Request, Response } from 'express';
+import neo4j from 'neo4j-driver';
+import { enrichCompanyData } from '../services/ai/enrich';
+import { generateOutreachEmail } from '../services/ai/outreach';
+import { generateScoreExplanation } from '../services/ai/explain';
 
 const router = Router();
 
-router.post("/ask", async (req: Request, res: Response) => {
+// Fallback driver initialization using standard environment variables if not globally provided by Tobias
+const driver = neo4j.driver(
+  process.env.NEO4J_URI || 'bolt://localhost:7687',
+  neo4j.auth.basic(process.env.NEO4J_USER || 'neo4j', process.env.NEO4J_PASSWORD || 'password')
+);
+
+// POST /api/ai/enrich/:companyId
+router.post('/enrich/:companyId', async (req: Request, res: Response): Promise<any> => {
+  const session = driver.session();
   try {
-    const { prompt, useGraphContext } = req.body;
-    const apiKey = process.env.OPENAI_API_KEY;
+    const { companyId } = req.params;
 
-    if (!prompt || typeof prompt !== "string") {
-      res.status(400).json({
-        ok: false,
-        error: { code: "INVALID_INPUT", message: "prompt field is required" },
-      });
-      return;
+    // 1. Fetch raw company info and aggregated signal descriptions from Neo4j graph
+    const readQuery = `
+      MATCH (c:Company) WHERE id(c) = toInteger($companyId)
+      OPTIONAL MATCH (c)-[:HAS_SIGNAL]->(s:Signal)
+      RETURN c.name AS name, collect(s.description) AS signals
+    `;
+    const readResult = await session.run(readQuery, { companyId });
+    
+    if (readResult.records.length === 0) {
+      return res.status(404).json({ success: false, error: "Company not found in graph database" });
     }
 
-    if (!apiKey || !isConfigured(apiKey)) {
-      res.status(503).json({
-        ok: false,
-        error: {
-          code: "AI_NOT_CONFIGURED",
-          message: "OPENAI_API_KEY is not set or is a placeholder. Copy .env.example to .env and add your key.",
-        },
-      });
-      return;
-    }
+    const companyName = readResult.records[0].get('name');
+    const signalsArray = readResult.records[0].get('signals');
+    const signalsText = signalsArray.join(' | ') || "No signals indexed yet.";
 
-    let context: string | undefined;
-    if (useGraphContext) {
-      try {
-        const result = await runQuery(
-          "MATCH (n) OPTIONAL MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50"
-        );
-        context = JSON.stringify(result.records.slice(0, 10));
-      } catch {
-        context = "Graph database unavailable";
-      }
-    }
+    // 2. Trigger LLM to generate enriched industry properties
+    const aiResult = await enrichCompanyData(companyName, signalsText);
 
-    const answer = await askAI(apiKey, prompt, context);
-    res.json({ ok: true, data: { answer } });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-    res.status(500).json({
-      ok: false,
-      error: { code: "AI_QUERY_FAILED", message },
+    // 3. Persist the structural AI metrics back into the Neo4j Company node
+    const writeQuery = `
+      MATCH (c:Company) WHERE id(c) = toInteger($companyId)
+      SET c.segment = $segment,
+          c.domain = $domain,
+          c.description = $description
+      RETURN c
+    `;
+    await session.run(writeQuery, {
+      companyId,
+      segment: aiResult.segment,
+      domain: aiResult.domain,
+      description: aiResult.description
     });
+
+    return res.status(200).json({ success: true, data: aiResult });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  } finally {
+    await session.close();
+  }
+});
+
+// POST /api/ai/outreach/:companyId
+router.post('/outreach/:companyId', async (req: Request, res: Response): Promise<any> => {
+  const session = driver.session();
+  try {
+    const { companyId } = req.params;
+
+    // Fetch the required semantic vectors and high-priority relationship tags for context-aware email generation
+    const query = `
+      MATCH (c:Company) WHERE id(c) = toInteger($companyId)
+      OPTIONAL MATCH (c)-[:HAS_SIGNAL]->(s:Signal)
+      OPTIONAL MATCH (c)-[:DEVELOPS]->(a:Application)
+      RETURN c.name AS name, c.segment AS segment, c.tier AS tier,
+             s.description AS topSignal, a.name AS appName
+      ORDER BY s.confidence DESC LIMIT 1
+    `;
+    const result = await session.run(query, { companyId });
+
+    if (result.records.length === 0) {
+      return res.status(404).json({ success: false, error: "Insufficient company data to generate email context" });
+    }
+
+    const record = result.records[0];
+    
+    const inputData = {
+      name: record.get('name'),
+      segment: record.get('segment') || 'BioTech Firm',
+      strongestSignal: record.get('topSignal') || 'Recent market activity',
+      matchedLine: (record.get('appName') === 'Hemostasis' ? 'Hemostasis' : 'Plasma Proteins') as any,
+      tier: (record.get('tier') || 'WARM') as any,
+      matchedItemsCount: 6 // Mocking portfolio cross-match count, can be bound to count(relationships) if needed
+    };
+
+    const emailDraft = await generateOutreachEmail(inputData);
+    return res.status(200).json({ success: true, emailDraft });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  } finally {
+    await session.close();
+  }
+});
+
+// GET /api/ai/explain/:companyId
+router.get('/explain/:companyId', async (req: Request, res: Response): Promise<any> => {
+  const session = driver.session();
+  try {
+    const { companyId } = req.params;
+
+    // Fetch algorithmic execution breakdown metrics computed earlier by Tobias' scoring script
+    const query = `
+      MATCH (c:Company) WHERE id(c) = toInteger($companyId)
+      RETURN c.name AS name, c.totalScore AS totalScore, c.signalScore AS signalScore, c.productFit AS productFit
+    `;
+    const result = await session.run(query, { companyId });
+
+    if (result.records.length === 0) {
+      return res.status(404).json({ success: false, error: "Company data or score nodes are missing from the graph" });
+    }
+
+    const record = result.records[0];
+    const breakdown = {
+      total: record.get('totalScore'),
+      signal: record.get('signalScore'),
+      fit: record.get('productFit')
+    };
+
+    const explanation = await generateScoreExplanation(record.get('name'), breakdown);
+    return res.status(200).json({ success: true, explanation });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, error: error.message });
+  } finally {
+    await session.close();
   }
 });
 
