@@ -13,6 +13,7 @@ export interface ActivityNote {
 export interface PipelineLead {
   id: string;
   stage: PipelineStage;
+  currentStage: PipelineStage;
   companyName: string;
   companyDomain?: string;
   companySegment?: string;
@@ -23,7 +24,7 @@ export interface PipelineLead {
   role?: string;
   stageEnteredAt: string;
   notes: ActivityNote[];
-  contacts?: ContactSummary[];
+  contacts: ContactSummary[];
   lastActivity?: string;
 }
 
@@ -92,8 +93,10 @@ export function useStartPipeline() {
 export function useAdvanceStage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (params: { contactId: string; targetStage: string }) => {
-      const res = await apiPut<{ newStage: string }>(`/api/pipeline/${params.contactId}/advance`, { stage: params.targetStage });
+    mutationFn: async (params: string | { contactId: string; targetStage: string }) => {
+      const contactId = typeof params === "string" ? params : params.contactId;
+      const stage = typeof params === "string" ? undefined : params.targetStage;
+      const res = await apiPut<{ newStage: string }>(`/api/pipeline/${contactId}/advance`, stage ? { stage } : {});
       if (!res.ok) throw new Error(res.error.message);
       return res.data;
     },

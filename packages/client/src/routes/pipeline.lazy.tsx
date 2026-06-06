@@ -7,6 +7,8 @@ import {
   useRegressStage,
   useAddActivity,
   useContactActivity,
+  useRunOutreach,
+  useGeneratePreferenceLink,
   STAGES,
   type StageName,
   type PipelineLead,
@@ -95,6 +97,8 @@ function LeadCard({
   isLast: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const genLink = useGeneratePreferenceLink();
   const contact = lead.contacts[0];
 
   return (
@@ -121,12 +125,37 @@ function LeadCard({
         <p className="text-xs text-gray-500 mt-1 truncate">{lead.lastActivity}</p>
       )}
 
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="text-xs text-gray-500 hover:text-cyan-400 mt-1 transition-colors"
-      >
-        {expanded ? "▲ Less" : "▼ Details"}
-      </button>
+      <div className="flex items-center gap-2 mt-1">
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="text-xs text-gray-500 hover:text-cyan-400 transition-colors"
+        >
+          {expanded ? "▲ Less" : "▼ Details"}
+        </button>
+        {contact && (
+          <button
+            onClick={async () => {
+              try {
+                const result = await genLink.mutateAsync({
+                  contactId: contact.id,
+                  companyName: lead.companyName,
+                  contactName: contact.name || "Valued Partner",
+                  email: contact.email || "",
+                  role: contact.role || "Contact",
+                });
+                const url = `${window.location.origin}${result.url}`;
+                await navigator.clipboard.writeText(url);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+              } catch {}
+            }}
+            disabled={genLink.isPending}
+            className="text-xs text-gray-500 hover:text-cyan-400 transition-colors disabled:opacity-40"
+          >
+            {genLink.isPending ? "..." : copied ? "✓ Copied!" : "🔗 Link"}
+          </button>
+        )}
+      </div>
 
       {expanded && contact && <ContactDetail contactId={contact.id} />}
     </div>
@@ -218,6 +247,7 @@ export function PipelinePage() {
   const { data: stages } = usePipelineStages();
   const startPipeline = useStartPipeline();
   const advance = useAdvanceStage();
+  const runOutreach = useRunOutreach();
 
   const stageLeads = new Map<string, PipelineLead[]>();
   if (leads) {
@@ -242,9 +272,18 @@ export function PipelinePage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Pipeline CRM</h1>
-        <p className="text-sm text-gray-500">
-          {leads ? `${leads.length} total` : "Loading..."}
-        </p>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => runOutreach.mutate()}
+            disabled={runOutreach.isPending}
+            className="text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded disabled:opacity-50 transition-colors"
+          >
+            {runOutreach.isPending ? "⏳ Running..." : "🚀 Run Outreach"}
+          </button>
+          <p className="text-sm text-gray-500">
+            {leads ? `${leads.length} total` : "Loading..."}
+          </p>
+        </div>
       </div>
 
       {leadsLoading && (
