@@ -143,13 +143,26 @@ interface GeneratedEmail {
 
 **File:** `packages/server/src/services/agents/preferenceConfirmation.ts`
 
-**Responsibility:** Manages consent tracking and form generation.
+**Responsibility:** Manages customer data confirmation page and consent tracking.
+
+**Customer Confirmation Page:** `/preferences/:contactId/:token`
+
+**What the customer sees:**
+- Pre-filled company name (from scraped data)
+- Pre-fetched interest areas (from AI analysis of their signals)
+- Customer confirms/corrects their contact information
+- Customer selects communication preferences
+- Customer reviews and confirms areas of interest
+- Explicit consent checkbox (GDPR required)
 
 **Form Fields:**
 ```typescript
 interface PreferenceForm {
   contactId: string;
   companyName: string;
+  contactName: string;
+  email: string;
+  role: string;
   consentGiven: boolean;
   preferredContactMethod: 'email' | 'call' | 'both';
   interestLevel: 'high' | 'medium' | 'scheduling_only';
@@ -159,25 +172,27 @@ interface PreferenceForm {
 }
 ```
 
-**Form URL:** `/preferences/:contactId/:token`
-
 **Token:** Expiring signed token (via JWT) valid for 7 days.
 
 **On Submission:**
 1. Validate token signature + expiration
-2. Update Contact node:
+2. Update Contact node with customer-confirmed data:
    ```cypher
    MATCH (c:Contact {id: $contactId})
-   SET c.consentGiven = true,
+   SET c.name = $contactName,
+       c.email = $email,
+       c.role = $role,
+       c.consentGiven = true,
        c.consentDate = toString(datetime()),
        c.preferredContactMethod = $method,
        c.interestLevel = $interest,
        c.interestedAreas = $areas,
        c.timeline = $timeline
    ```
-3. If `interestLevel !== 'exploring'`, advance to "Contacted" stage
-4. Add activity: "PREFERENCE_CONFIRMED" with form data
-5. Send confirmation email to customer
+3. Verify email format and domain matches company
+4. If `interestLevel !== 'exploring'`, advance to "Contacted" stage
+5. Add activity: "PREFERENCE_CONFIRMED" with form data
+6. Send confirmation email to customer (acknowledging consent)
 
 ### 5. Outreach Orchestrator
 
@@ -235,8 +250,9 @@ async function runOutreachBatch() {
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/preferences/:contactId/:token` | Render preference confirmation form |
-| POST | `/preferences/:contactId/:token` | Submit preference form |
+| GET | `/preferences/:contactId/:token` | Render customer data confirmation page |
+| POST | `/preferences/:contactId/:token` | Submit confirmed preferences and consent |
+| POST | `/api/agents/preferences/validate` | Validate token and fetch pre-filled data |
 | GET | `/api/agents/preferences/:contactId` | Get contact preferences (admin) |
 
 ### Webhooks
@@ -256,18 +272,30 @@ async function runOutreachBatch() {
 **Route:** `/preferences/[contactId]/[token]`
 
 **Design:**
-- Clean, minimal form
-- Company header/logo from profile
+- Clean, minimal landing page
+- Company header with scraped info
+- Pre-filled contact data (editable by customer)
 - Progress indicator (step 1 of 1)
-- Consent checkbox (required, GDPR)
+- Consent checkbox (required, GDPR - cannot be pre-checked)
 - Multi-select interest areas (pre-populated from AI analysis)
-- Submit button: "Confirm & Continue"
+- Submit button: "Confirm My Details & Preferences"
 - Thank you message with expected follow-up timeline
+
+**What the customer does:**
+1. Verify their company name (scraped from public data)
+2. Confirm/correct their contact details (name, email, role)
+3. Select preferred communication method
+4. Review AI-suggested interest areas (can add/remove)
+5. Select their interest level and timeline
+6. Check explicit consent checkbox
+7. Submit
 
 **Validation:**
 - Token must be valid and not expired
 - Consent checkbox must be checked
 - Contact method must be selected
+- Email format must be valid
+- Email domain should match company domain (soft validation)
 
 ---
 
@@ -333,16 +361,22 @@ FROM_NAME="Tobias Weiss | Siemens Healthineers"
 For the hackathon demo, we'll simulate the agentic workflow:
 
 1. **Mock Outreach Generator:** Pre-generate 2-3 realistically personalized emails
-2. **Mock Preference Form:** Create a standalone HTML page with realistic data
-3. **Demo Flow:**
-   - Show HOT leads dashboard
-   - Click "Start Outreach Batch" button
-   - Show progress: "Scanning for qualified leads..."
-   - Display generated email preview
-   - Navigate to preference form URL (simulated)
-   - Fill out form with demo data
-   - Show lead appears in "Contacted" pipeline stage
-   - Display consent confirmation activity
+2. **Preference Confirmation Page:** Already implemented at `/preferences/[contactId]/[token]`
+3. **Demo Data:** Demo pipeline loaded with `npm run demo:pipeline`
+4. **Demo Flow:**
+   - Show HOT leads dashboard (filter by tier)
+   - Click "Generate Outreach Email" on a HOT lead
+   - Show AI-generated personalized email with portfolio match details
+   - Display "Copy Link" button for preference confirmation page
+   - Navigate to preference form URL (open in new tab)
+   - Show customer confirming their details and providing consent
+   - Lead advances to "Contacted" pipeline stage automatically
+   - Display consent confirmation activity in timeline
+
+**Sample Demo URLs:**
+- Dashboard: `http://localhost:5173/`
+- Pipeline: `http://localhost:5173/pipeline`
+- Preference Form (demo token): `http://localhost:5173/preferences/[id]/demo_token_123`
 
 ---
 
