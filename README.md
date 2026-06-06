@@ -32,6 +32,21 @@ npm run dev
 
 Open **http://localhost:5173** — client on :5173, server on :3001, Neo4j Browser on :7474.
 
+### Database Bootstrap
+
+To populate a fresh Neo4j with pre-ingested data (1,300 companies, 1,800 signals, scored and ready):
+
+```bash
+# Option A: Docker bootstrap service (recommended)
+docker compose up -d neo4j
+docker compose --profile bootstrap run bootstrap
+
+# Option B: Run locally via npm
+npm run db:bootstrap
+```
+
+To re-snapshot the current DB state: `npm run db:export`
+
 ## Project Structure
 
 ```
