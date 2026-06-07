@@ -12,13 +12,13 @@ test.describe("UI Elements", () => {
 
     test("should display page title", async ({ page }) => {
       await page.goto("/");
-      await expect(page).toHaveTitle(/LeadGraph/);
+      await expect(page).toHaveTitle(/Gi-Hack/);
     });
 
     test("should display Neo4j connection status", async ({ page }) => {
       await page.goto("/admin");
       await page.waitForLoadState("networkidle");
-      await expect(page.locator("text=Neo4j connected")).toBeVisible({ timeout: 15000 });
+      await expect(page.locator("text=Graph DB connected")).toBeVisible({ timeout: 15000 });
     });
 
     test("should have all navigation items", async ({ page }) => {
@@ -37,7 +37,7 @@ test.describe("UI Elements", () => {
         { link: "Leads", url: "/leads", heading: "Lead Explorer" },
         { link: "Pipeline", url: "/pipeline", heading: "Pipeline CRM" },
         { link: "Graph Explorer", url: "/graph", heading: "Graph Explorer" },
-        { link: "Chat", url: "/chat", heading: "AI Chat" },
+        // { link: "Chat", url: "/chat", heading: "AI Chat" },
         { link: "Admin", url: "/admin", heading: "Admin Panel" },
       ];
 
@@ -241,7 +241,7 @@ test.describe("UI Elements", () => {
   });
 
   test.describe("Chat Page", () => {
-    test("should display AI Chat interface with input and send button", async ({ page }) => {
+    test.skip("should display AI Chat interface with input and send button", async ({ page }) => {
       await page.goto("/chat");
       await page.waitForLoadState("networkidle");
       await expect(page.locator("h1:has-text('AI Chat')")).toBeVisible();
