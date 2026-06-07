@@ -18,7 +18,6 @@ import { MedicaAdapter } from "./adapters/medica.js";
 import { FoekatAdapter } from "./adapters/foekat.js";
 import { MDALLAdapter } from "./adapters/mdall.js";
 import { MFDSAdapter } from "./adapters/mfds.js";
-import { TGAAdapter } from "./adapters/tga.js";
 import { NMPAAdapter } from "./adapters/nmpa.js";
 import { PatentStubAdapter } from "./adapters/patent-stub.js";
 import { HiringStubAdapter } from "./adapters/hiring-stub.js";
@@ -42,7 +41,6 @@ export function getOrchestrator(): SourceManager {
     managerInstance.register(new FoekatAdapter(), { weight: 15 });
     managerInstance.register(new MDALLAdapter(), { weight: 25 });
     managerInstance.register(new MFDSAdapter(), { weight: 25 });
-    managerInstance.register(new TGAAdapter(), { weight: 25 });
     managerInstance.register(new NMPAAdapter(), { weight: 25 });
     managerInstance.register(new ConferenceStubAdapter(), { weight: 15 });
     managerInstance.register(new FundingStubAdapter(), { weight: 10 });
