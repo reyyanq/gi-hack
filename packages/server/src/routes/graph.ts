@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { runQuery, verifyConnection } from "../services/graph/neo4j.js";
 import { seedGraph, truncateGraph, getOrchestrator } from "../services/graph/ingest/index.js";
 import { createJob, startJob, completeJob, completeAdapter, failJob, getJob } from "../services/graph/ingest/job-tracker.js";
+import { triggerIngestionNow } from "../services/scheduler.js";
 
 const router = Router();
 
@@ -182,6 +183,16 @@ router.post("/score/run", async (_req: Request, res: Response) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
     res.status(500).json({ ok: false, error: { code: "SCORE_RUN_FAILED", message } });
+  }
+});
+
+router.post("/cron/ingest", async (_req: Request, res: Response) => {
+  try {
+    const result = await triggerIngestionNow();
+    res.json({ ok: true, data: result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(500).json({ ok: false, error: { code: "CRON_INGEST_FAILED", message } });
   }
 });
 

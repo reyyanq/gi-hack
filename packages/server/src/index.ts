@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import pino from "pino";
 import apiRouter from "./routes/api.js";
 import { createDriver, closeDriver, verifyConnection } from "./services/graph/neo4j.js";
+import { startScheduler, stopScheduler } from "./services/scheduler.js";
 
 const logger = pino({ name: "server" });
 const app = express();
@@ -32,7 +33,6 @@ app.get("*", (_req, res) => {
   });
 });
 
-// Direct preference form submit route (POST to the URL shown in the email)
 app.post("/preferences/:contactId/:token", async (req, res) => {
   try {
     const apiRes = await fetch(`http://localhost:${PORT}/api/agents/preferences/submit`, {
@@ -64,6 +64,8 @@ async function start() {
   app.listen(PORT, () => {
     logger.info(`Server running on http://localhost:${PORT}`);
   });
+
+  startScheduler();
 }
 
 start().catch((err) => {
@@ -74,11 +76,13 @@ start().catch((err) => {
 process.on("SIGINT", async () => {
   logger.info("Shutting down...");
   await closeDriver();
+  await stopScheduler();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
   logger.info("Shutting down...");
   await closeDriver();
+  await stopScheduler();
   process.exit(0);
 });
