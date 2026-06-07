@@ -38,7 +38,11 @@ export type SignalType =
   | "FUNDING"
   | "CONFERENCE"
   | "NEWS"
-  | "RESEARCH_PUBLICATION";
+  | "RESEARCH_PUBLICATION"
+  | "MDALL_CLEARANCE"
+  | "MFDS_CLEARANCE"
+  | "TGA_CLEARANCE"
+  | "NMPA_CLEARANCE";
 
 export interface IngestionSummary {
   sourceId: string;
