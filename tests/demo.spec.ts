@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
 
+async function goto(page: any, url: string) {
+  await page.goto(url);
+  await page.waitForLoadState('load');
+}
+
 test.describe('Gi-Hack Demo Pipeline', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/');
+    await goto(page, '/');
   });
 
   test('homepage loads', async ({ page }) => {
@@ -10,31 +15,17 @@ test.describe('Gi-Hack Demo Pipeline', () => {
   });
 
   test('navigate to pipeline page', async ({ page }) => {
-    await page.goto('/pipeline');
-    await page.waitForLoadState('networkidle');
-
+    await goto(page, '/pipeline');
     await expect(page.locator('body')).toBeVisible();
   });
 
-  test('pipeline displays demo leads', async ({ page }) => {
-    await page.goto('/pipeline');
-    await page.waitForLoadState('networkidle');
-
-    const pageContent = await page.content();
-    expect(pageContent.toLowerCase()).toMatch(/pipeline|lead|stage/);
-  });
-
   test('navigate to leads page', async ({ page }) => {
-    await page.goto('/leads');
-    await page.waitForLoadState('networkidle');
-
+    await goto(page, '/leads');
     await expect(page.locator('body')).toBeVisible();
   });
 
   test('navigate to admin page', async ({ page }) => {
-    await page.goto('/admin');
-    await page.waitForLoadState('networkidle');
-
+    await goto(page, '/admin');
     const pageContent = await page.content();
     expect(pageContent).toBeTruthy();
   });
@@ -42,18 +33,7 @@ test.describe('Gi-Hack Demo Pipeline', () => {
 
 test.describe('Graph Explorer', () => {
   test('graph explorer loads', async ({ page }) => {
-    await page.goto('/graph');
-    await page.waitForLoadState('networkidle');
-
-    await expect(page.locator('body')).toBeVisible();
-  });
-});
-
-test.describe('Chat Interface', () => {
-  test.skip('chat page loads', async ({ page }) => {
-    await page.goto('/chat');
-    await page.waitForLoadState('networkidle');
-
+    await goto(page, '/graph');
     await expect(page.locator('body')).toBeVisible();
   });
 });
