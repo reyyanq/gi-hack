@@ -1,5 +1,12 @@
 # Gi-Hack — AI Graph TanStack Boilerplate
 
+[![CI](https://github.com/tobias-weiss-ai-xr/gi-hack/actions/workflows/ci.yml/badge.svg)](https://github.com/tobias-weiss-ai-xr/gi-hack/actions/workflows/ci.yml)
+[![Deploy](https://github.com/tobias-weiss-ai-xr/gi-hack/actions/workflows/deploy.yml/badge.svg)](https://github.com/tobias-weiss-ai-xr/gi-hack/actions/workflows/deploy.yml)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)](https://react.dev)
+[![Neo4j](https://img.shields.io/badge/Neo4j-5-008CC1?logo=neo4j&logoColor=white)](https://neo4j.com)
+[![Last commit](https://img.shields.io/github/last-commit/tobias-weiss-ai-xr/gi-hack)](https://github.com/tobias-weiss-ai-xr/gi-hack/commits/main)
+
 ![LeadGraph Teaser](docs/teaser.png)
 
 A ready-to-hack boilerplate for the **StartMiUp Hackathon – AI for Mittelhessen**.

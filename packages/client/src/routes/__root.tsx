@@ -1,8 +1,19 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
 import { useGraphHealth } from "../lib/graph";
 
+function NotFound() {
+  return (
+    <div style={{ padding: "80px 32px", textAlign: "center", color: "#8a8f9e" }}>
+      <h1 style={{ fontSize: 64, fontWeight: 700, color: "#6366f1", margin: "0 0 8px" }}>404</h1>
+      <p style={{ fontSize: 16, margin: "0 0 24px" }}>This page doesn&apos;t exist in LeadGraph.</p>
+      <a href="/" style={{ color: "#6366f1", textDecoration: "underline", fontSize: 14 }}>Back to Dashboard</a>
+    </div>
+  );
+}
+
 export const Route = createRootRoute({
   component: RootLayout,
+  notFoundComponent: NotFound,
 });
 
 const navItems = [

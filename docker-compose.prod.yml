@@ -19,10 +19,7 @@ services:
       - leads-internal
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: leads-app:latest
+    image: ghcr.io/tobias-weiss-ai-xr/gi-hack:latest
     container_name: leads-app
     restart: unless-stopped
     depends_on:

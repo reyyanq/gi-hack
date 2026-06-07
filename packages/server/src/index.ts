@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import pino from "pino";
 import apiRouter from "./routes/api.js";
 import { createDriver, closeDriver, verifyConnection } from "./services/graph/neo4j.js";
@@ -8,10 +10,27 @@ const logger = pino({ name: "server" });
 const app = express();
 const PORT = parseInt(process.env.PORT ?? "3001", 10);
 
-app.use(cors({ origin: ["http://localhost:5173"] }));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+app.use(cors({ origin: [
+  "http://localhost:5173",
+  "https://leads.graphwiz.ai",
+  "http://leads.graphwiz.ai",
+]}));
 app.use(express.json());
 
 app.use("/api", apiRouter);
+
+const clientDist = path.resolve(__dirname, "../../client/dist");
+app.use(express.static(clientDist));
+
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(clientDist, "index.html"), (err) => {
+    if (err) {
+      res.status(404).json({ ok: false, error: { code: "NOT_FOUND", message: "Resource not found" } });
+    }
+  });
+});
 
 // Direct preference form submit route (POST to the URL shown in the email)
 app.post("/preferences/:contactId/:token", async (req, res) => {

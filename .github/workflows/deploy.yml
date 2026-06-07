@@ -1,0 +1,130 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  SITE_URL: https://leads.graphwiz.ai
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+                     ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Push to GHCR
+        run: |
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Deploy to production
+        id: deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+                       ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:previous 2>/dev/null || true
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            cd ~/git/gi-hack
+            git pull
+            docker compose -f docker-compose.prod.yml pull app
+            docker compose -f docker-compose.prod.yml up -d app
+            echo "${{ github.sha }}" > /tmp/gi-hack-deployed-sha
+            docker image prune -f
+
+      - name: Wait for container readiness
+        run: sleep 15
+
+      - name: Health check — homepage
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ env.SITE_URL }}/)
+          if [ "$STATUS" != "200" ]; then
+            echo "FAIL: homepage returned $STATUS"
+            exit 1
+          fi
+          echo "OK: homepage returned $STATUS"
+
+      - name: Health check — API health
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ env.SITE_URL }}/api/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "FAIL: /api/health returned $STATUS"
+            exit 1
+          fi
+          echo "OK: /api/health returned $STATUS"
+
+      - name: Health check — leads page
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ env.SITE_URL }}/leads)
+          if [ "$STATUS" != "200" ]; then
+            echo "FAIL: /leads returned $STATUS"
+            exit 1
+          fi
+          echo "OK: /leads returned $STATUS"
+
+      - name: Health check — API graph health
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 ${{ env.SITE_URL }}/api/graph/health)
+          if [ "$STATUS" != "200" ]; then
+            echo "FAIL: /api/graph/health returned $STATUS"
+            exit 1
+          fi
+          echo "OK: /api/graph/health returned $STATUS"
+
+      - name: Rollback on health check failure
+        if: failure()
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            echo "Health check failed — rolling back to previous image..."
+            docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:previous \
+                       ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 2>/dev/null || true
+            cd ~/git/gi-hack
+            docker compose -f docker-compose.prod.yml up -d app
+            echo "Rollback complete. Previous image restored."
