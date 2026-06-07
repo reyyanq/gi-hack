@@ -5,7 +5,7 @@ const TGA_API = "https://data.tga.gov.au/ARTGSearch/ARTGWebService.svc/JSON/ARTG
 // Device entries start appearing around offset 10,000 and continue to ~60,000.
 // Beyond 60k responses can be too large to parse, so we skip those.
 const START_OFFSET = 10_000;
-const MAX_PAGES = 20;
+const MAX_PAGES = 5;
 const PAGE_SIZE = 1000;
 
 const DIAGNOSTIC_GMDN_TERMS = [
