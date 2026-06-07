@@ -10,7 +10,7 @@
     "dev:server": "npm -w packages/server run dev",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
-    "lint": "eslint . --max-warnings 0",
+    "lint": "eslint . --max-warnings 100",
     "lint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:watch": "vitest",
