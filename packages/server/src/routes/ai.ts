@@ -1,20 +1,27 @@
 import { Router, Request, Response } from 'express';
-import neo4j from 'neo4j-driver';
-import { enrichCompanyData } from '../services/ai/enrich';
-import { generateOutreachEmail } from '../services/ai/outreach';
-import { generateScoreExplanation } from '../services/ai/explain';
+import type { Driver } from 'neo4j-driver';
+import { enrichCompanyData } from '../services/ai/enrich.js';
+import { generateOutreachEmail } from '../services/ai/outreach.js';
+import { generateScoreExplanation } from '../services/ai/explain.js';
 
 const router = Router();
 
-// Fallback driver initialization using standard environment variables if not globally provided by Tobias
-const driver = neo4j.driver(
-  process.env.NEO4J_URI || 'bolt://localhost:7687',
-  neo4j.auth.basic(process.env.NEO4J_USER || 'neo4j', process.env.NEO4J_PASSWORD || 'password')
-);
+/** Lazy Neo4j driver — created on first use so bad env vars don't crash the server at import time */
+let _driver: Driver | null = null;
+async function getDriver(): Promise<Driver> {
+  if (!_driver) {
+    const neo4j = await import('neo4j-driver');
+    _driver = neo4j.default.driver(
+      process.env.NEO4J_URI || 'bolt://localhost:7687',
+      neo4j.default.auth.basic(process.env.NEO4J_USER || 'neo4j', process.env.NEO4J_PASSWORD || 'password')
+    );
+  }
+  return _driver;
+}
 
 // POST /api/ai/enrich/:companyId
 router.post('/enrich/:companyId', async (req: Request, res: Response): Promise<any> => {
-  const session = driver.session();
+  const session = (await getDriver()).session();
   try {
     const { companyId } = req.params;
 
@@ -62,7 +69,7 @@ router.post('/enrich/:companyId', async (req: Request, res: Response): Promise<a
 
 // POST /api/ai/outreach/:companyId
 router.post('/outreach/:companyId', async (req: Request, res: Response): Promise<any> => {
-  const session = driver.session();
+  const session = (await getDriver()).session();
   try {
     const { companyId } = req.params;
 
@@ -103,7 +110,7 @@ router.post('/outreach/:companyId', async (req: Request, res: Response): Promise
 
 // GET /api/ai/explain/:companyId
 router.get('/explain/:companyId', async (req: Request, res: Response): Promise<any> => {
-  const session = driver.session();
+  const session = (await getDriver()).session();
   try {
     const { companyId } = req.params;
 

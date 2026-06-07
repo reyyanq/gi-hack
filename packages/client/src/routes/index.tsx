@@ -155,28 +155,9 @@ function HeroSection() {
             e.currentTarget.style.boxShadow = `0 4px 20px ${COLORS.accent}40`;
           }}
         >
-          Explore the Demo
+          Explore the Dashboard
         </Link>
 
-        <a
-          href="/presentation/pitch.md"
-          download
-          style={{
-            padding: "16px 32px",
-            borderRadius: "12px",
-            background: "transparent",
-            color: COLORS.text,
-            fontSize: "15px",
-            fontWeight: "500",
-            textDecoration: "none",
-            border: `1px solid ${COLORS.subtext}40`,
-            cursor: "pointer",
-            transition: "all 0.3s ease",
-            display: "inline-block",
-          }}
-        >
-          📥 Download Pitch
-        </a>
       </div>
 
       <FlowDiagram />
