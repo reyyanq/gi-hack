@@ -56,7 +56,7 @@ function FlowDiagram() {
     }}>
       {[
         { label: "Data Sources", color: "#6366f1" },
-        { label: "Neo4j Graph", color: "#8b5cf6" },
+        { label: "Graph", color: "#8b5cf6" },
         { label: "AI Scoring", color: "#f97316" },
         { label: "Leads", color: "#22c55e" },
       ].map((item, idx) => (

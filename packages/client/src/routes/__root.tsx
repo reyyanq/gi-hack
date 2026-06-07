@@ -78,7 +78,7 @@ function StatusDot() {
   const ok = !isLoading && data?.status === "ok";
   return (
     <span
-      title={ok ? "Neo4j connected" : "Neo4j disconnected"}
+      title={ok ? "Graph DB connected" : "Graph DB disconnected"}
       style={{
         display: "inline-block",
         width: 8,
@@ -165,7 +165,7 @@ export function RootLayout() {
           flexShrink: 0,
         }}>
           <StatusDot />
-          <span style={{ fontSize: 11, color: "#888" }}>Neo4j</span>
+          <span style={{ fontSize: 11, color: "#888" }}>Graph DB</span>
         </div>
       </header>
 

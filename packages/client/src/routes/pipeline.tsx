@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   usePipelineLeads,
@@ -239,7 +240,11 @@ function ContactDetail({ contactId }: { contactId: string }) {
   );
 }
 
-export function PipelinePage() {
+export const Route = createFileRoute("/pipeline")({
+  component: PipelinePage,
+});
+
+function PipelinePage() {
   const { data: leads, isLoading: leadsLoading } = usePipelineLeads();
   const { data: stages } = usePipelineStages();
   const startPipeline = useStartPipeline();

@@ -1,3 +1,4 @@
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { useGraphQuery } from "../lib/graph";
 
@@ -45,7 +46,11 @@ function neo4jId(obj: unknown): string {
   return String(obj);
 }
 
-export function GraphPage() {
+export const Route = createFileRoute("/graph")({
+  component: GraphPage,
+});
+
+function GraphPage() {
   const PRESET_QUERIES = [
     { label: "Signal-Rich Leads", query: "MATCH (c:Company)-[r:HAS_SIGNAL]->(s:Signal) WHERE NOT c.name CONTAINS 'Siemens' RETURN c, r, s LIMIT 50" },
     { label: "Lead Cross-Section", query: "MATCH (c:Company) WHERE c.segment = 'IVD' AND NOT c.name CONTAINS 'Siemens' WITH c LIMIT 3 OPTIONAL MATCH (c)-[r1:HAS_SIGNAL]->(s:Signal) OPTIONAL MATCH (c)-[r2:DEVELOPS]->(a:Application) RETURN c, r1, s, r2, a" },
