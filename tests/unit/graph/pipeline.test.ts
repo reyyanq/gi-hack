@@ -184,7 +184,7 @@ describe('Pipeline CRM Logic', () => {
     it('should include contact information', async () => {
       const testId = Date.now();
       await runQuery(`MERGE (c:Company {name: $name}) SET c.domain = $domain`, { name: `Test Company ${testId}`, domain: `test${testId}.com` });
-      const { contactId } = await startPipeline(`Test Company ${testId}`, 'TestContact', `test${testId}@example.com`, 'VP Sales');
+      await startPipeline(`Test Company ${testId}`, 'TestContact', `test${testId}@example.com`, 'VP Sales');
 
       const leads = await getPipelineLeads();
       const testLead = leads.find(l => l.companyName.includes(`Test Company ${testId}`));
@@ -198,7 +198,7 @@ describe('Pipeline CRM Logic', () => {
     it('should include current stage', async () => {
       const testId = Date.now();
       await runQuery(`MERGE (c:Company {name: $name}) SET c.domain = $domain`, { name: `Test Company ${testId}`, domain: `test${testId}.com` });
-      const { contactId } = await startPipeline(`Test Company ${testId}`, 'TestContact');
+      await startPipeline(`Test Company ${testId}`, 'TestContact');
 
       const leads = await getPipelineLeads();
       const testLead = leads.find(l => l.companyName.includes(`Test Company ${testId}`));

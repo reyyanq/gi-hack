@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 
 // We test the actual scoring logic as pure functions since the scorer.ts
 // exports functions that we can test without a Neo4j connection
-const { scoreAll } = await import('../../../packages/server/dist/services/graph/scoring/scorer.js') as any;
+await import('../../../packages/server/dist/services/graph/scoring/scorer.js') as any;
 
 // But scoreAll depends on Neo4j, so we test the internal logic directly
 // by importing from the source via dist, and mocking for integration tests
@@ -347,9 +347,6 @@ describe('Scoring Algorithm - RESEARCH_PUBLICATION Weight', () => {
   });
 
   it('should still treat unknown signal types with default weight 5', () => {
-    const signals = [
-      { type: "UNKNOWN_TYPE", date: "2025-01-01", confidence: 0.5, description: "unknown" },
-    ];
     const weight = 5;
     const signalScore = Math.min((weight * 0.5) / 10, 40);
     expect(signalScore).toBe(0.25);

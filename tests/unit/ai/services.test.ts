@@ -140,12 +140,6 @@ describe('AI Services', () => {
     it('should use default values when LLM fails', async () => {
       const mockLLM = vi.fn().mockRejectedValue(new Error('API error'));
 
-      const fallbackResult = {
-        segment: 'UNKNOWN',
-        domain: null,
-        description: 'Unable to enrich at this time'
-      };
-
       await expect(mockLLM('Test Company', [])).rejects.toThrow();
     });
   });
